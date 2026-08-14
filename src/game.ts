@@ -207,6 +207,8 @@ export interface Result {
   hits: number
   rows: RevealRow[]
   deck: Deck
+  stars: number
+  xp: number
 }
 
 // Auswahl gegen die tatsächlichen Preise auswerten.
@@ -235,7 +237,95 @@ export function score(g: GameState): Result {
       return { name: c.n, img: c.img, picked: p, actual: a, st }
     })
     .sort((x, y) => order[x.st] - order[y.st])
-  return { time, hits, rows, deck: g.deck }
+  const stars = starsFor(hits, time)
+  const xp = earnXp({ h: hits, t: time })
+  return { time, hits, rows, deck: g.deck, stars, xp }
+}
+
+// --- Fortschritt / Gamification ---
+
+// XP einer Runde: Treffer stark gewichtet, Zeitbonus für < 45s.
+export function earnXp(r: { h: number; t: number }): number {
+  return Math.round(r.h * 120 + Math.max(0, 45 - r.t) * 4)
+}
+
+// Sterne (0..3): 6 Treffer perfekt (3 bei ≤ 30s, sonst 2), sonst nach Treffern.
+export function starsFor(h: number, t: number): number {
+  return h >= 6 ? (t <= 30 ? 3 : 2) : h >= 4 ? 2 : h >= 2 ? 1 : 0
+}
+
+const RANKS = [
+  'Rookie',
+  'Prize Scout',
+  'Deck Reader',
+  'Prize Hunter',
+  'Sharp Eye',
+  'Prize Master',
+  'Grand Master',
+]
+
+export function rankFor(level: number): string {
+  return RANKS[Math.min(RANKS.length - 1, level - 1)]
+}
+
+const XP_PER_LEVEL = 600
+
+export interface Progress {
+  totalXp: number
+  level: number
+  rank: string
+  levelPct: number // 0..100
+  xpInLevel: number
+  streakDays: number
+}
+
+export function progressOf(history: Round[]): Progress {
+  const totalXp = history.reduce((a, r) => a + earnXp(r), 0)
+  const level = Math.floor(totalXp / XP_PER_LEVEL) + 1
+  const xpInLevel = totalXp % XP_PER_LEVEL
+  return {
+    totalXp,
+    level,
+    rank: rankFor(level),
+    levelPct: (xpInLevel / XP_PER_LEVEL) * 100,
+    xpInLevel,
+    streakDays: dayStreak(history),
+  }
+}
+
+// Aufeinanderfolgende Tage (bis heute/gestern) mit mindestens einer Runde.
+export function dayStreak(history: Round[]): number {
+  if (!history.length) return 0
+  const key = (d: Date) => d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate()
+  const days = [...new Set(history.map((r) => key(new Date(r.ts))))].sort().reverse()
+  const cur = new Date()
+  if (days[0] !== key(cur)) {
+    cur.setDate(cur.getDate() - 1)
+    if (days[0] !== key(cur)) return days.length ? 1 : 0
+  }
+  let streak = 0
+  for (const d of days) {
+    if (d === key(cur)) {
+      streak++
+      cur.setDate(cur.getDate() - 1)
+    } else break
+  }
+  return streak
+}
+
+// --- Deck-abhängiges Aussehen ---
+
+// Stabiler Farbton (0..360) aus einem String (Deck-Name), für ein dezentes,
+// deckabhängiges Hintergrund-Tint. Bewusst niedrig gesättigt einsetzen.
+export function hueOf(str: string): number {
+  let h = 0
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 360
+  return h
+}
+
+// Haupt-Pokémon eines Decks (bevorzugt ein "ex"), Basis für Bild & Farbe.
+export function starCard(deck: Deck): Card {
+  return deck.cards.find((c) => /ex$/.test(c.n)) || deck.cards[0]
 }
 
 export interface ParseResult {

@@ -23,7 +23,16 @@ export function Reveal({ result, onPlayAgain, onHome, onStats }: Props) {
     result.hits === 6 ? 'Perfekte Lesung! 🎯' : result.hits >= 4 ? 'Starke Lesung' : 'Weiter trainieren'
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+    <div
+      style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'var(--bg)',
+        position: 'relative',
+      }}
+    >
+      {result.stars >= 3 && <Confetti />}
       <div className="pc-scroll" style={{ padding: '24px 18px 12px' }}>
         <h1
           style={{
@@ -36,9 +45,41 @@ export function Reveal({ result, onPlayAgain, onHome, onStats }: Props) {
         >
           {headline}
         </h1>
-        <p style={{ margin: '0 0 18px', color: 'var(--sub)', fontSize: 13.5 }}>
+        <p style={{ margin: '0 0 12px', color: 'var(--sub)', fontSize: 13.5 }}>
           {result.deck.name} · Auswahl vs. tatsächliche Preise
         </p>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                style={{
+                  fontSize: 26,
+                  filter: i < result.stars ? 'none' : 'grayscale(1) opacity(.3)',
+                  animation:
+                    i < result.stars ? `starPop .4s ${0.15 + i * 0.12}s ease both` : 'none',
+                }}
+              >
+                ⭐
+              </span>
+            ))}
+          </div>
+          <span
+            style={{
+              marginLeft: 'auto',
+              fontSize: 14,
+              fontWeight: 800,
+              color: 'var(--accentInk)',
+              background: 'var(--accentSoft)',
+              padding: '6px 12px',
+              borderRadius: 999,
+              animation: 'badgePulse 1.2s ease-in-out infinite',
+            }}
+          >
+            +{result.xp} XP
+          </span>
+        </div>
 
         <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
           <Metric value={fmt(result.time)} label="Zeit" />
@@ -141,6 +182,38 @@ export function Reveal({ result, onPlayAgain, onHome, onStats }: Props) {
           Statistik
         </button>
       </div>
+    </div>
+  )
+}
+
+function Confetti() {
+  const colors = ['#4FC3F7', '#2FBF71', '#F5A623', '#F0564F', '#8fdcff']
+  const pieces = Array.from({ length: 26 }, (_, i) => i)
+  return (
+    <div
+      aria-hidden
+      style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 5 }}
+    >
+      {pieces.map((i) => {
+        const left = (i * 37) % 100
+        const delay = (i % 7) * 0.12
+        const size = 6 + (i % 4) * 2
+        return (
+          <span
+            key={i}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: left + '%',
+              width: size,
+              height: size * 1.6,
+              borderRadius: 2,
+              background: colors[i % colors.length],
+              animation: `confFall ${1.4 + (i % 5) * 0.2}s ${delay}s ease-in forwards`,
+            }}
+          />
+        )
+      })}
     </div>
   )
 }

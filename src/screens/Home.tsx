@@ -1,6 +1,85 @@
-import { type Deck, type Round, fmt } from '../game'
+import { type Deck, type Round, fmt, progressOf } from '../game'
 import { CardFace } from '../CardFace'
 import { NavBar } from './NavBar'
+
+function ProgressHeader({ history }: { history: Round[] }) {
+  const p = progressOf(history)
+  return (
+    <div
+      style={{
+        borderRadius: 20,
+        padding: '16px 18px',
+        marginBottom: 14,
+        background: 'linear-gradient(135deg, var(--accentInk), #2E9FD8)',
+        color: '#eaf7ff',
+        boxShadow: 'var(--shadow)',
+        animation: 'rise .35s ease both',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div
+          style={{
+            width: 46,
+            height: 46,
+            borderRadius: 14,
+            flexShrink: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(255,255,255,.16)',
+            border: '1px solid rgba(255,255,255,.25)',
+          }}
+        >
+          <span style={{ fontSize: 9, opacity: 0.8, lineHeight: 1 }}>LVL</span>
+          <span style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.1 }}>{p.level}</span>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15.5, fontWeight: 800 }}>{p.rank}</div>
+          <div style={{ fontSize: 12, opacity: 0.85 }}>
+            {p.xpInLevel} / 600 XP
+          </div>
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+            fontSize: 14,
+            fontWeight: 800,
+            padding: '6px 10px',
+            borderRadius: 999,
+            background: 'rgba(255,255,255,.16)',
+          }}
+        >
+          <span style={{ animation: 'flameFlick 1.4s ease-in-out infinite', display: 'inline-block' }}>
+            🔥
+          </span>
+          {p.streakDays}
+        </div>
+      </div>
+      <div
+        style={{
+          marginTop: 12,
+          height: 8,
+          borderRadius: 999,
+          background: 'rgba(255,255,255,.22)',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            width: p.levelPct + '%',
+            height: '100%',
+            borderRadius: 999,
+            background: '#eaf7ff',
+            transition: 'width .5s ease',
+          }}
+        />
+      </div>
+    </div>
+  )
+}
 
 interface Props {
   decks: Deck[]
@@ -42,6 +121,8 @@ export function Home({ decks, history, theme, onToggleTheme, onPlay, onImport, o
       </header>
 
       <div className="pc-scroll" style={{ padding: '4px 16px 20px' }}>
+        <ProgressHeader history={history} />
+
         {decks.map((d) => (
           <DeckTile key={d.id} deck={d} history={history} onPlay={() => onPlay(d)} />
         ))}
@@ -135,11 +216,22 @@ function DeckTile({ deck, history, onPlay }: { deck: Deck; history: Round[]; onP
           {rounds.length} Runden
         </p>
         <button
-          className="btn btn-primary"
           onClick={onPlay}
-          style={{ padding: '9px 22px', fontSize: 14 }}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 7,
+            border: 'none',
+            borderRadius: 999,
+            padding: '9px 20px',
+            fontSize: 14,
+            fontWeight: 800,
+            color: '#06323f',
+            background: 'linear-gradient(140deg, #5FD0FF, #2E9FD8 55%, #1B7FB8)',
+            boxShadow: '0 6px 16px rgba(27,127,184,.35)',
+          }}
         >
-          Spielen
+          <span style={{ fontSize: 11 }}>▶</span> Spielen
         </button>
       </div>
     </div>

@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { type GameState, fmt } from '../game'
 import { CardFace } from '../CardFace'
+import { DeckBackground } from '../DeckBackground'
 
 interface Props {
   game: GameState
+  dark: boolean
   onChange: (g: GameState) => void
   onQuit: () => void
   onConfirm: (g: GameState) => void
@@ -11,7 +13,7 @@ interface Props {
 
 const LIMIT = 45
 
-export function GameScreen({ game, onChange, onQuit, onConfirm }: Props) {
+export function GameScreen({ game, dark, onChange, onQuit, onConfirm }: Props) {
   const [tab, setTab] = useState<'table' | 'list'>('table')
   const [, force] = useState(0)
 
@@ -33,7 +35,16 @@ export function GameScreen({ game, onChange, onQuit, onConfirm }: Props) {
   const canConfirm = selTotal === 6
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+    <div
+      style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'var(--bg)',
+        minHeight: 0,
+        overflow: 'hidden',
+      }}
+    >
       <header style={{ padding: '14px 16px 8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
           <button
@@ -107,7 +118,7 @@ export function GameScreen({ game, onChange, onQuit, onConfirm }: Props) {
       </header>
 
       {tab === 'table' ? (
-        <TableTab game={game} onChange={onChange} />
+        <TableTab game={game} dark={dark} onChange={onChange} />
       ) : (
         <ListTab game={game} onChange={onChange} />
       )}
@@ -160,7 +171,15 @@ function TabBtn({
   )
 }
 
-function TableTab({ game, onChange }: { game: GameState; onChange: (g: GameState) => void }) {
+function TableTab({
+  game,
+  dark,
+  onChange,
+}: {
+  game: GameState
+  dark: boolean
+  onChange: (g: GameState) => void
+}) {
   const di = Math.max(0, Math.min(game.rest.length - 1, game.deckIdx || 0))
   const wheelRef = useRef(0)
   const touchY = useRef<number | null>(null)
@@ -168,6 +187,8 @@ function TableTab({ game, onChange }: { game: GameState; onChange: (g: GameState
   const move = (d: number) =>
     onChange({ ...game, deckIdx: Math.max(0, Math.min(game.rest.length - 1, di + d)) })
 
+  // Überlappender Stapel: aktuelle Karte plus je zwei Nachbarn, die oben/unten
+  // hervorschauen — wie in der ersten Version, aber ohne umschließende Box.
   const win: { k: number; i: number }[] = []
   for (let k = -2; k <= 2; k++) {
     const i = di + k
@@ -176,152 +197,183 @@ function TableTab({ game, onChange }: { game: GameState; onChange: (g: GameState
   }
 
   return (
-    <div className="pc-scroll" style={{ padding: '10px 16px 16px' }}>
-      {/* Handkarten */}
-      <SectionLabel>Hand · {game.hand.length}</SectionLabel>
-      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
-        {game.hand.map((c, idx) => (
+    <div
+      style={{
+        position: 'relative',
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '10px 16px 14px',
+        overflow: 'hidden',
+      }}
+    >
+      <DeckBackground deck={game.deck} dark={dark} intensity="full" />
+
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+        {/* Hand & aktives Pokémon in einer überlappenden Reihe (kein Scroll) */}
+        <SectionLabel>Hand · {game.hand.length} · Aktiv</SectionLabel>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-end',
+            paddingBottom: 4,
+            marginBottom: 12,
+            flexShrink: 0,
+            overflow: 'hidden',
+          }}
+        >
           <div
-            key={idx}
             style={{
               position: 'relative',
-              width: 52,
-              height: 72,
+              width: 54,
+              height: 75,
               flexShrink: 0,
               borderRadius: 9,
               overflow: 'hidden',
+              border: '2px solid var(--accent)',
+              boxShadow: 'var(--shadow)',
+              zIndex: 20,
             }}
           >
-            <CardFace img={c.img} name={c.n} radius={9} fontSize={8} />
-          </div>
-        ))}
-      </div>
-
-      {/* Aktive Position / Deck / Preise */}
-      <div style={{ display: 'flex', gap: 10, margin: '14px 0' }}>
-        <InfoSlot label="Aktiv">
-          <div
-            style={{
-              position: 'relative',
-              width: 30,
-              height: 42,
-              borderRadius: 6,
-              overflow: 'hidden',
-            }}
-          >
-            <CardFace img={game.active.img} name={game.active.n} radius={6} fontSize={6} />
-          </div>
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: 'var(--ink)',
-              lineHeight: 1.15,
-            }}
-          >
-            {game.active.n}
-          </span>
-        </InfoSlot>
-        <StatSlot label="Deck" value={String(game.rest.length)} solid />
-        <StatSlot label="Preise" value="6" striped />
-      </div>
-
-      {/* Großer Deck-Stapel zum Durchblättern */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 6,
-        }}
-      >
-        <SectionLabel>Deck · {game.rest.length} Karten</SectionLabel>
-        <span style={{ fontSize: 12, color: 'var(--sub)' }}>
-          {di + 1} / {game.rest.length}
-        </span>
-      </div>
-
-      <div
-        onWheel={(e) => {
-          const now = Date.now()
-          if (now - wheelRef.current < 260) return
-          if (Math.abs(e.deltaY) < 8) return
-          wheelRef.current = now
-          move(e.deltaY > 0 ? 1 : -1)
-        }}
-        onTouchStart={(e) => (touchY.current = e.touches[0].clientY)}
-        onTouchEnd={(e) => {
-          const dy = e.changedTouches[0].clientY - (touchY.current ?? e.changedTouches[0].clientY)
-          if (dy < -28) move(1)
-          else if (dy > 28) move(-1)
-        }}
-        style={{
-          position: 'relative',
-          height: 300,
-          borderRadius: 20,
-          background: 'var(--panel)',
-          overflow: 'hidden',
-          touchAction: 'pan-y',
-        }}
-      >
-        {win.map(({ k, i }) => {
-          const c = game.rest[i]
-          const tf =
-            k === 0
-              ? 'translate(-50%,-50%)'
-              : `translate(-50%,-50%) translateY(${k * 44}px) scale(${1 - Math.abs(k) * 0.06})`
-          return (
-            <div
-              key={i}
+            <CardFace img={game.active.img} name={game.active.n} radius={9} fontSize={8} />
+            <span
               style={{
                 position: 'absolute',
-                left: '50%',
-                top: '50%',
-                height: '78%',
-                aspectRatio: '63 / 88',
-                transform: tf,
-                zIndex: 100 - Math.abs(k),
-                transition: 'transform .26s cubic-bezier(.22,1,.36,1)',
-                borderRadius: 14,
-                overflow: 'hidden',
-                boxShadow: k === 0 ? 'var(--shadow)' : 'none',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                textAlign: 'center',
+                fontSize: 8.5,
+                fontWeight: 800,
+                letterSpacing: 0.4,
+                color: '#fff',
+                background: 'var(--accentInk)',
+                padding: '1px 0',
               }}
             >
-              <CardFace img={c.img} name={c.n} radius={14} fontSize={15} />
-              {k === 0 && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: '#fff',
-                    background: 'rgba(6,50,63,.55)',
-                    padding: '2px 8px',
-                    borderRadius: 999,
-                  }}
-                >
-                  {i + 1} / {game.rest.length}
-                </span>
-              )}
+              AKTIV
+            </span>
+          </div>
+          {game.hand.map((c, idx) => (
+            <div
+              key={idx}
+              style={{
+                position: 'relative',
+                width: 50,
+                height: 70,
+                flexShrink: 0,
+                marginLeft: idx === 0 ? 8 : -22,
+                borderRadius: 9,
+                overflow: 'hidden',
+                boxShadow: '0 2px 8px rgba(14,42,50,.18)',
+                zIndex: idx + 1,
+              }}
+            >
+              <CardFace img={c.img} name={c.n} radius={9} fontSize={8} />
             </div>
-          )
-        })}
-      </div>
+          ))}
+        </div>
 
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 18,
-          marginTop: 12,
-        }}
-      >
-        <ArrowBtn dir="↑" disabled={di === 0} onClick={() => move(-1)} />
-        <span style={{ fontSize: 12, color: 'var(--sub)' }}>wischen oder Pfeile</span>
-        <ArrowBtn dir="↓" disabled={di === game.rest.length - 1} onClick={() => move(1)} />
+        {/* Deck-Header */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 6,
+            flexShrink: 0,
+          }}
+        >
+          <SectionLabel>Deck durchblättern</SectionLabel>
+          <span style={{ fontSize: 12, color: 'var(--sub)' }}>
+            {di + 1} / {game.rest.length}
+          </span>
+        </div>
+
+        {/* Überlappender Deck-Stapel, füllt den restlichen Platz (ohne Box) */}
+        <div
+          onWheel={(e) => {
+            const now = Date.now()
+            if (now - wheelRef.current < 260) return
+            if (Math.abs(e.deltaY) < 8) return
+            wheelRef.current = now
+            move(e.deltaY > 0 ? 1 : -1)
+          }}
+          onTouchStart={(e) => (touchY.current = e.touches[0].clientY)}
+          onTouchEnd={(e) => {
+            const dy = e.changedTouches[0].clientY - (touchY.current ?? e.changedTouches[0].clientY)
+            if (dy < -28) move(1)
+            else if (dy > 28) move(-1)
+          }}
+          style={{
+            position: 'relative',
+            flex: 1,
+            minHeight: 0,
+            touchAction: 'pan-y',
+          }}
+        >
+          {win.map(({ k, i }) => {
+            const c = game.rest[i]
+            const tf =
+              k === 0
+                ? 'translate(-50%,-50%)'
+                : `translate(-50%,-50%) translateY(${k * 42}px) scale(${1 - Math.abs(k) * 0.06})`
+            return (
+              <div
+                key={i}
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  height: '86%',
+                  aspectRatio: '63 / 88',
+                  transform: tf,
+                  zIndex: 100 - Math.abs(k),
+                  transition: 'transform .26s cubic-bezier(.22,1,.36,1)',
+                  borderRadius: 14,
+                  overflow: 'hidden',
+                  boxShadow: k === 0 ? 'var(--shadow)' : 'none',
+                  opacity: k === 0 ? 1 : 0.9,
+                }}
+              >
+                <CardFace img={c.img} name={c.n} radius={14} fontSize={15} />
+                {k === 0 && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: 8,
+                      right: 8,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color: '#fff',
+                      background: 'rgba(6,50,63,.55)',
+                      padding: '2px 8px',
+                      borderRadius: 999,
+                    }}
+                  >
+                    {i + 1} / {game.rest.length}
+                  </span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 18,
+            marginTop: 10,
+            flexShrink: 0,
+          }}
+        >
+          <ArrowBtn dir="↑" disabled={di === 0} onClick={() => move(-1)} />
+          <span style={{ fontSize: 12, color: 'var(--sub)' }}>wischen oder Pfeile</span>
+          <ArrowBtn dir="↓" disabled={di === game.rest.length - 1} onClick={() => move(1)} />
+        </div>
       </div>
     </div>
   )
@@ -425,74 +477,6 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     >
       {children}
     </p>
-  )
-}
-
-function InfoSlot({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        background: 'var(--surface)',
-        border: '1px solid var(--line)',
-        borderRadius: 14,
-        padding: 10,
-      }}
-    >
-      {children}
-      <span style={{ marginLeft: 'auto', fontSize: 9.5, fontWeight: 700, color: 'var(--sub)' }}>
-        {label.toUpperCase()}
-      </span>
-    </div>
-  )
-}
-
-function StatSlot({
-  label,
-  value,
-  solid,
-  striped,
-}: {
-  label: string
-  value: string
-  solid?: boolean
-  striped?: boolean
-}) {
-  return (
-    <div
-      style={{
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        background: 'var(--surface)',
-        border: '1px solid var(--line)',
-        borderRadius: 14,
-        padding: 10,
-      }}
-    >
-      <div
-        style={{
-          width: 30,
-          height: 42,
-          borderRadius: 6,
-          background: solid
-            ? 'var(--accent)'
-            : striped
-              ? 'repeating-linear-gradient(45deg, var(--accentSoft), var(--accentSoft) 5px, var(--slot) 5px, var(--slot) 10px)'
-              : 'var(--slot)',
-        }}
-      />
-      <div>
-        <div style={{ fontSize: 9.5, fontWeight: 700, color: 'var(--sub)' }}>
-          {label.toUpperCase()}
-        </div>
-        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)' }}>{value}</div>
-      </div>
-    </div>
   )
 }
 

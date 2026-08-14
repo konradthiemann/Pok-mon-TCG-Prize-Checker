@@ -107,6 +107,7 @@ export function App() {
         return game ? (
           <GameScreen
             game={game}
+            dark={theme === 'dark'}
             onChange={setGame}
             onQuit={quitGame}
             onConfirm={confirm}
