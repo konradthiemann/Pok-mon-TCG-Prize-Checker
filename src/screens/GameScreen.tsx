@@ -180,20 +180,106 @@ function TableTab({
   dark: boolean
   onChange: (g: GameState) => void
 }) {
-  const di = Math.max(0, Math.min(game.rest.length - 1, game.deckIdx || 0))
-  const wheelRef = useRef(0)
-  const touchY = useRef<number | null>(null)
+  const len = game.rest.length
+  const SPACING = 44
 
-  const move = (d: number) =>
-    onChange({ ...game, deckIdx: Math.max(0, Math.min(game.rest.length - 1, di + d)) })
+  // Kontinuierliche Scroll-Position (Bruchzahl) für Schwung-/Trägheits-Scrollen:
+  // anstupsen, weiterlaufen lassen und sanft auf die nächste Karte einrasten —
+  // wie eine echte Scrollbar, die nach dem Loslassen weiterläuft.
+  const posRef = useRef(Math.max(0, Math.min(len - 1, game.deckIdx || 0)))
+  const velRef = useRef(0)
+  const rafRef = useRef<number | null>(null)
+  const draggingRef = useRef(false)
+  const lastYRef = useRef(0)
+  const lastTRef = useRef(0)
+  const committedRef = useRef(Math.round(posRef.current))
+  const [pos, setPos] = useState(posRef.current)
 
-  // Überlappender Stapel: aktuelle Karte plus je zwei Nachbarn, die oben/unten
-  // hervorschauen — wie in der ersten Version, aber ohne umschließende Box.
-  const win: { k: number; i: number }[] = []
-  for (let k = -2; k <= 2; k++) {
-    const i = di + k
-    if (i < 0 || i >= game.rest.length) continue
-    win.push({ k, i })
+  const clampPos = (p: number) => Math.max(0, Math.min(len - 1, p))
+
+  const commitIdx = (p: number) => {
+    const idx = clampPos(Math.round(p))
+    if (idx !== committedRef.current) {
+      committedRef.current = idx
+      onChange({ ...game, deckIdx: idx })
+    }
+  }
+
+  const applyPos = (p: number) => {
+    const c = clampPos(p)
+    posRef.current = c
+    setPos(c)
+    commitIdx(c)
+    return c
+  }
+
+  const stopRaf = () => {
+    if (rafRef.current != null) {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+    }
+  }
+
+  // Schwung: Position mit abklingender Geschwindigkeit weiterlaufen lassen,
+  // dann sanft auf die nächste ganze Karte einrasten.
+  const runMomentum = () => {
+    stopRaf()
+    const step = () => {
+      let p = posRef.current + velRef.current
+      if (p <= 0) {
+        p = 0
+        velRef.current = 0
+      }
+      if (p >= len - 1) {
+        p = len - 1
+        velRef.current = 0
+      }
+      velRef.current *= 0.92
+      if (Math.abs(velRef.current) < 0.0015) {
+        const target = clampPos(Math.round(p))
+        const np = p + (target - p) * 0.22
+        if (Math.abs(target - np) < 0.004) {
+          applyPos(target)
+          rafRef.current = null
+          return
+        }
+        applyPos(np)
+      } else {
+        applyPos(p)
+      }
+      rafRef.current = requestAnimationFrame(step)
+    }
+    rafRef.current = requestAnimationFrame(step)
+  }
+
+  // Sanftes Gleiten zu einer Zielkarte (Pfeiltasten).
+  const glideTo = (target: number) => {
+    stopRaf()
+    velRef.current = 0
+    const t = clampPos(target)
+    const step = () => {
+      const np = posRef.current + (t - posRef.current) * 0.22
+      if (Math.abs(t - np) < 0.004) {
+        applyPos(t)
+        rafRef.current = null
+        return
+      }
+      applyPos(np)
+      rafRef.current = requestAnimationFrame(step)
+    }
+    rafRef.current = requestAnimationFrame(step)
+  }
+
+  useEffect(() => stopRaf, [])
+
+  const di = clampPos(Math.round(pos))
+
+  // Sichtbares Fenster um die aktuelle Position (überlappender Stapel).
+  const base = Math.round(pos)
+  const winIdx: number[] = []
+  for (let i = base - 3; i <= base + 3; i++) {
+    if (i < 0 || i >= len) continue
+    winIdx.push(i)
   }
 
   return (
@@ -291,34 +377,49 @@ function TableTab({
           </span>
         </div>
 
-        {/* Überlappender Deck-Stapel, füllt den restlichen Platz (ohne Box) */}
+        {/* Überlappender Deck-Stapel mit Schwung-Scrollen (füllt den Rest) */}
         <div
           onWheel={(e) => {
-            const now = Date.now()
-            if (now - wheelRef.current < 260) return
-            if (Math.abs(e.deltaY) < 8) return
-            wheelRef.current = now
-            move(e.deltaY > 0 ? 1 : -1)
+            velRef.current = Math.max(
+              -1.2,
+              Math.min(1.2, velRef.current + (e.deltaY / SPACING) * 0.6),
+            )
+            runMomentum()
           }}
-          onTouchStart={(e) => (touchY.current = e.touches[0].clientY)}
-          onTouchEnd={(e) => {
-            const dy = e.changedTouches[0].clientY - (touchY.current ?? e.changedTouches[0].clientY)
-            if (dy < -28) move(1)
-            else if (dy > 28) move(-1)
+          onTouchStart={(e) => {
+            stopRaf()
+            draggingRef.current = true
+            velRef.current = 0
+            lastYRef.current = e.touches[0].clientY
+            lastTRef.current = performance.now()
+          }}
+          onTouchMove={(e) => {
+            if (!draggingRef.current) return
+            const y = e.touches[0].clientY
+            const now = performance.now()
+            const dp = -(y - lastYRef.current) / SPACING
+            const dt = Math.max(1, now - lastTRef.current)
+            applyPos(posRef.current + dp)
+            velRef.current = (dp / dt) * 16
+            lastYRef.current = y
+            lastTRef.current = now
+          }}
+          onTouchEnd={() => {
+            draggingRef.current = false
+            runMomentum()
           }}
           style={{
             position: 'relative',
             flex: 1,
             minHeight: 0,
-            touchAction: 'pan-y',
+            touchAction: 'none',
           }}
         >
-          {win.map(({ k, i }) => {
+          {winIdx.map((i) => {
             const c = game.rest[i]
-            const tf =
-              k === 0
-                ? 'translate(-50%,-50%)'
-                : `translate(-50%,-50%) translateY(${k * 42}px) scale(${1 - Math.abs(k) * 0.06})`
+            const d = i - pos
+            const ad = Math.abs(d)
+            const isCurrent = i === di
             return (
               <div
                 key={i}
@@ -328,17 +429,16 @@ function TableTab({
                   top: '50%',
                   height: '86%',
                   aspectRatio: '63 / 88',
-                  transform: tf,
-                  zIndex: 100 - Math.abs(k),
-                  transition: 'transform .26s cubic-bezier(.22,1,.36,1)',
+                  transform: `translate(-50%,-50%) translateY(${d * SPACING}px) scale(${1 - Math.min(ad, 3) * 0.06})`,
+                  zIndex: 100 - Math.round(ad * 10),
                   borderRadius: 14,
                   overflow: 'hidden',
-                  boxShadow: k === 0 ? 'var(--shadow)' : 'none',
-                  opacity: k === 0 ? 1 : 0.9,
+                  boxShadow: isCurrent ? 'var(--shadow)' : 'none',
+                  opacity: Math.max(0.45, 1 - ad * 0.14),
                 }}
               >
                 <CardFace img={c.img} name={c.n} radius={14} fontSize={15} />
-                {k === 0 && (
+                {isCurrent && (
                   <span
                     style={{
                       position: 'absolute',
@@ -352,7 +452,7 @@ function TableTab({
                       borderRadius: 999,
                     }}
                   >
-                    {i + 1} / {game.rest.length}
+                    {i + 1} / {len}
                   </span>
                 )}
               </div>
@@ -370,9 +470,17 @@ function TableTab({
             flexShrink: 0,
           }}
         >
-          <ArrowBtn dir="↑" disabled={di === 0} onClick={() => move(-1)} />
+          <ArrowBtn
+            dir="↑"
+            disabled={di === 0}
+            onClick={() => glideTo(Math.round(posRef.current) - 1)}
+          />
           <span style={{ fontSize: 12, color: 'var(--sub)' }}>wischen oder Pfeile</span>
-          <ArrowBtn dir="↓" disabled={di === game.rest.length - 1} onClick={() => move(1)} />
+          <ArrowBtn
+            dir="↓"
+            disabled={di === len - 1}
+            onClick={() => glideTo(Math.round(posRef.current) + 1)}
+          />
         </div>
       </div>
     </div>
