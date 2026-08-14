@@ -1,0 +1,161 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #dfeee3;
+  font-family: 'Sora', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px) rotate(1.5deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.pc {
+  --bg: #f1faf2;
+  --panel: #e2f3e6;
+  --surface: #ffffff;
+  --ink: #0e2a32;
+  --sub: #64837b;
+  --line: rgba(14, 42, 50, 0.09);
+  --accent: #4fc3f7;
+  --accentSoft: #d9f1fc;
+  --accentInk: #0b5a7a;
+  --good: #2fbf71;
+  --bad: #f0564f;
+  --warn: #f5a623;
+  --shadow: 0 10px 26px rgba(14, 42, 50, 0.1);
+  --slot: #b7e7fa;
+}
+
+.pc.dark {
+  --bg: #0c1613;
+  --panel: #122019;
+  --surface: #17251f;
+  --ink: #eaf6f0;
+  --sub: #8ba79c;
+  --line: rgba(234, 246, 240, 0.1);
+  --accentSoft: #0f2c3a;
+  --accentInk: #8fdcff;
+  --shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  --slot: #155a78;
+}
+
+/* App-Rahmen: mobil-first, auf großen Screens wie ein Phone zentriert */
+.pc-root {
+  min-height: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background: #dfeee3;
+}
+.pc.dark ~ .pc-root,
+.pc-root.dark {
+  background: #08110e;
+}
+
+.pc-app {
+  width: 100%;
+  max-width: 460px;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+  position: relative;
+  overflow: hidden;
+}
+@media (min-width: 480px) {
+  .pc-root {
+    align-items: center;
+    padding: 24px 16px;
+  }
+  .pc-app {
+    min-height: 0;
+    height: 900px;
+    max-height: calc(100vh - 48px);
+    border-radius: 34px;
+    box-shadow: 0 30px 80px rgba(14, 42, 50, 0.28);
+  }
+}
+
+.pc-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+a {
+  color: var(--accentInk);
+  text-decoration: none;
+}
+
+.btn {
+  border: none;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 12px 20px;
+  transition: transform 0.12s ease, opacity 0.12s ease;
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn-primary {
+  background: var(--accent);
+  color: #06323f;
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--sub);
+}
+
+.card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}

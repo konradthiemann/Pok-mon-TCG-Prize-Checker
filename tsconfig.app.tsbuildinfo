@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/cardface.tsx","./src/game.ts","./src/main.tsx","./src/storage.ts","./src/screens/gamescreen.tsx","./src/screens/home.tsx","./src/screens/importscreen.tsx","./src/screens/navbar.tsx","./src/screens/onboarding.tsx","./src/screens/reveal.tsx","./src/screens/stats.tsx"],"version":"5.9.3"}
