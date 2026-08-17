@@ -16,6 +16,10 @@ const LIMIT = 45
 export function GameScreen({ game, dark, onChange, onQuit, onConfirm }: Props) {
   const [tab, setTab] = useState<'table' | 'list'>('table')
   const [, force] = useState(0)
+  // Fan-Position (Bruchzahl über game.rest) & angehobene Karten leben lokal,
+  // damit Drag/Scrub flüssig bleibt und der Tab-Wechsel sie nicht zurücksetzt.
+  const [fanPos, setFanPos] = useState(0)
+  const [raised, setRaised] = useState<Record<number, boolean>>({})
 
   // Timer-Tick, solange das Spiel läuft.
   useEffect(() => {
@@ -37,6 +41,7 @@ export function GameScreen({ game, dark, onChange, onQuit, onConfirm }: Props) {
   return (
     <div
       style={{
+        position: 'relative',
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
@@ -45,109 +50,124 @@ export function GameScreen({ game, dark, onChange, onQuit, onConfirm }: Props) {
         overflow: 'hidden',
       }}
     >
-      <header style={{ padding: '14px 16px 8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
-          <button
-            onClick={onQuit}
-            aria-label="Beenden"
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 12,
-              border: '1px solid var(--line)',
-              background: 'var(--surface)',
-              color: 'var(--ink)',
-              fontSize: 16,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            ✕
-          </button>
-          <span
-            style={{
-              fontSize: 22,
-              fontWeight: 800,
-              fontVariantNumeric: 'tabular-nums',
-              color: timerColor,
-            }}
-          >
-            {fmt(el)}
-          </span>
-          <span style={{ marginLeft: 'auto', fontSize: 12.5, color: 'var(--sub)' }}>
-            {progLabel}
-          </span>
-        </div>
-        <div
-          style={{
-            height: 6,
-            borderRadius: 999,
-            background: 'var(--line)',
-            overflow: 'hidden',
-          }}
-        >
-          <div
-            style={{
-              height: '100%',
-              width: progWidth,
-              background: progColor,
-              borderRadius: 999,
-              transition: 'width .1s linear',
-            }}
-          />
-        </div>
+      {/* Dynamischer, deckabhängiger Pixel-Hintergrund (ganzer Screen) */}
+      <DeckBackground deck={game.deck} dark={dark} intensity="full" />
 
-        <div
+      <div
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+      {/* Kopf: Beenden + Timer/Restzeit + Fortschrittsbalken */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px 6px' }}>
+        <button
+          onClick={onQuit}
+          aria-label="Beenden"
           style={{
-            display: 'flex',
-            gap: 6,
-            marginTop: 12,
-            background: 'var(--panel)',
-            borderRadius: 14,
-            padding: 4,
+            width: 38,
+            height: 38,
+            borderRadius: 13,
+            flex: 'none',
+            border: '1px solid var(--line)',
+            background: 'var(--surface)',
+            color: 'var(--ink)',
+            fontSize: 16,
           }}
         >
-          <TabBtn active={tab === 'table'} onClick={() => setTab('table')}>
-            Tisch
-          </TabBtn>
-          <TabBtn active={tab === 'list'} onClick={() => setTab('list')}>
-            Deckliste · {selTotal}/6
-          </TabBtn>
+          ✕
+        </button>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+            <span
+              style={{
+                fontSize: 24,
+                fontWeight: 800,
+                letterSpacing: 0.5,
+                fontVariantNumeric: 'tabular-nums',
+                color: timerColor,
+              }}
+            >
+              {fmt(el)}
+            </span>
+            <span
+              style={{
+                fontSize: 10.5,
+                fontWeight: 700,
+                fontVariantNumeric: 'tabular-nums',
+                color: progColor,
+              }}
+            >
+              {progLabel}
+            </span>
+          </div>
+          <div style={{ height: 6, borderRadius: 999, background: 'var(--panel)', overflow: 'hidden' }}>
+            <div
+              style={{
+                height: '100%',
+                width: progWidth,
+                background: progColor,
+                borderRadius: 999,
+                transition: 'width .1s linear, background .3s',
+              }}
+            />
+          </div>
         </div>
-      </header>
+      </div>
 
       {tab === 'table' ? (
-        <TableTab game={game} dark={dark} onChange={onChange} />
+        <TableTab
+          game={game}
+          fanPos={fanPos}
+          setFanPos={setFanPos}
+          raised={raised}
+          setRaised={setRaised}
+        />
       ) : (
-        <ListTab game={game} onChange={onChange} />
+        <ListTab
+          game={game}
+          selTotal={selTotal}
+          canConfirm={canConfirm}
+          onChange={onChange}
+          onConfirm={() => canConfirm && onConfirm(game)}
+        />
       )}
 
-      {tab === 'list' && (
-        <div style={{ padding: '10px 16px 18px', borderTop: '1px solid var(--line)' }}>
-          <p style={{ margin: '0 0 8px', fontSize: 13, color: 'var(--sub)', textAlign: 'center' }}>
-            Ausgewählt: {selTotal} / 6
-          </p>
-          <button
-            className="btn btn-primary"
-            onClick={() => canConfirm && onConfirm(game)}
-            disabled={!canConfirm}
-            style={{ width: '100%', padding: 15, fontSize: 16, opacity: canConfirm ? 1 : 0.45 }}
-          >
-            Bestätigen
-          </button>
-        </div>
-      )}
+      {/* Untere Umschaltleiste: Tisch ⟷ Deckliste */}
+      <div
+        style={{
+          flex: 'none',
+          display: 'flex',
+          gap: 6,
+          background: 'var(--surface)',
+          borderTop: '1px solid var(--line)',
+          padding: '8px 18px 14px',
+        }}
+      >
+        <TabBtn active={tab === 'table'} icon="🂠" onClick={() => setTab('table')}>
+          Tisch
+        </TabBtn>
+        <TabBtn active={tab === 'list'} icon="☑" onClick={() => setTab('list')}>
+          Deckliste · {selTotal}/6
+        </TabBtn>
+      </div>
+      </div>
     </div>
   )
 }
 
 function TabBtn({
   active,
+  icon,
   onClick,
   children,
 }: {
   active: boolean
+  icon: string
   onClick: () => void
   children: React.ReactNode
 }) {
@@ -156,16 +176,21 @@ function TabBtn({
       onClick={onClick}
       style={{
         flex: 1,
+        height: 50,
         border: 'none',
-        borderRadius: 11,
-        padding: '9px 6px',
+        borderRadius: 14,
         fontWeight: 700,
-        fontSize: 13.5,
-        background: active ? 'var(--surface)' : 'transparent',
+        fontSize: 14,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        background: active ? 'var(--accentSoft)' : 'var(--panel)',
         color: active ? 'var(--accentInk)' : 'var(--sub)',
-        boxShadow: active ? 'var(--shadow)' : 'none',
+        boxShadow: active ? 'inset 0 0 0 2px var(--accentInk)' : 'none',
       }}
     >
+      <span style={{ fontSize: 17 }}>{icon}</span>
       {children}
     </button>
   )
@@ -173,323 +198,305 @@ function TabBtn({
 
 function TableTab({
   game,
-  dark,
-  onChange,
+  fanPos,
+  setFanPos,
+  raised,
+  setRaised,
 }: {
   game: GameState
-  dark: boolean
-  onChange: (g: GameState) => void
+  fanPos: number
+  setFanPos: (p: number) => void
+  raised: Record<number, boolean>
+  setRaised: (r: Record<number, boolean>) => void
 }) {
-  const len = game.rest.length
-  const SPACING = 44
+  const N = game.rest.length
+  const maxPos = Math.max(0, N - 1)
+  const clampP = (p: number) => Math.max(0, Math.min(maxPos, p))
+  const pos = clampP(fanPos)
+  const deckIdx1 = N ? Math.round(pos) + 1 : 0
 
-  // Kontinuierliche Scroll-Position (Bruchzahl) für Schwung-/Trägheits-Scrollen:
-  // anstupsen, weiterlaufen lassen und sanft auf die nächste Karte einrasten —
-  // wie eine echte Scrollbar, die nach dem Loslassen weiterläuft.
-  const posRef = useRef(Math.max(0, Math.min(len - 1, game.deckIdx || 0)))
-  const velRef = useRef(0)
-  const rafRef = useRef<number | null>(null)
-  const draggingRef = useRef(false)
-  const lastYRef = useRef(0)
-  const lastTRef = useRef(0)
-  const committedRef = useRef(Math.round(posRef.current))
-  const [pos, setPos] = useState(posRef.current)
+  const raisedCount = Object.values(raised).filter(Boolean).length
+  const raisedLabel = raisedCount > 0 ? `${raisedCount} angehoben · ` : ''
 
-  const clampPos = (p: number) => Math.max(0, Math.min(len - 1, p))
+  const fdrag = useRef<{ x: number; pos: number } | null>(null)
+  const fanMoved = useRef(false)
+  const tapIdx = useRef<number | null>(null)
+  const sdrag = useRef(false)
 
-  const commitIdx = (p: number) => {
-    const idx = clampPos(Math.round(p))
-    if (idx !== committedRef.current) {
-      committedRef.current = idx
-      onChange({ ...game, deckIdx: idx })
+  const dragging = fdrag.current != null || sdrag.current
+  const trans = dragging
+    ? 'none'
+    : 'transform .18s cubic-bezier(.2,.8,.3,1), box-shadow .18s, border-color .18s'
+
+  // --- Fächer: horizontal ziehen / Rad, Tippen hebt eine Karte an ---
+  const fanDown = (e: React.PointerEvent) => {
+    fdrag.current = { x: e.clientX, pos }
+    fanMoved.current = false
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      /* ignore */
     }
   }
-
-  const applyPos = (p: number) => {
-    const c = clampPos(p)
-    posRef.current = c
-    setPos(c)
-    commitIdx(c)
-    return c
+  const fanMove = (e: React.PointerEvent) => {
+    const fd = fdrag.current
+    if (!fd) return
+    const dx = e.clientX - fd.x
+    if (Math.abs(dx) > 6) fanMoved.current = true
+    setFanPos(clampP(fd.pos - dx / 40))
+  }
+  const fanUp = () => {
+    const idx = tapIdx.current
+    const tap = !fanMoved.current && idx != null
+    fdrag.current = null
+    tapIdx.current = null
+    if (tap) setRaised({ ...raised, [idx!]: !raised[idx!] })
+    else setFanPos(Math.round(pos))
+  }
+  const fanWheel = (e: React.WheelEvent) => {
+    setFanPos(clampP(pos + (e.deltaY + e.deltaX) / 50))
   }
 
-  const stopRaf = () => {
-    if (rafRef.current != null) {
-      cancelAnimationFrame(rafRef.current)
-      rafRef.current = null
+  // --- Scrubber-Leiste (Scrollbar) ---
+  const scrubTo = (e: React.PointerEvent) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    const f = Math.max(0, Math.min(1, (e.clientX - r.left - 31) / (r.width - 62)))
+    setFanPos(f * maxPos)
+  }
+  const scrubDown = (e: React.PointerEvent) => {
+    sdrag.current = true
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      /* ignore */
     }
+    scrubTo(e)
+  }
+  const scrubMove = (e: React.PointerEvent) => {
+    if (sdrag.current) scrubTo(e)
+  }
+  const scrubUp = () => {
+    sdrag.current = false
+    setFanPos(Math.round(pos))
   }
 
-  // Schwung: Position mit abklingender Geschwindigkeit weiterlaufen lassen,
-  // dann sanft auf die nächste ganze Karte einrasten.
-  const runMomentum = () => {
-    stopRaf()
-    const step = () => {
-      let p = posRef.current + velRef.current
-      if (p <= 0) {
-        p = 0
-        velRef.current = 0
-      }
-      if (p >= len - 1) {
-        p = len - 1
-        velRef.current = 0
-      }
-      velRef.current *= 0.92
-      if (Math.abs(velRef.current) < 0.0015) {
-        const target = clampPos(Math.round(p))
-        const np = p + (target - p) * 0.22
-        if (Math.abs(target - np) < 0.004) {
-          applyPos(target)
-          rafRef.current = null
-          return
-        }
-        applyPos(np)
-      } else {
-        applyPos(p)
-      }
-      rafRef.current = requestAnimationFrame(step)
-    }
-    rafRef.current = requestAnimationFrame(step)
-  }
+  const frac = N > 1 ? pos / (N - 1) : 0
 
-  // Sanftes Gleiten zu einer Zielkarte (Pfeiltasten).
-  const glideTo = (target: number) => {
-    stopRaf()
-    velRef.current = 0
-    const t = clampPos(target)
-    const step = () => {
-      const np = posRef.current + (t - posRef.current) * 0.22
-      if (Math.abs(t - np) < 0.004) {
-        applyPos(t)
-        rafRef.current = null
-        return
-      }
-      applyPos(np)
-      rafRef.current = requestAnimationFrame(step)
-    }
-    rafRef.current = requestAnimationFrame(step)
-  }
-
-  useEffect(() => stopRaf, [])
-
-  const di = clampPos(Math.round(pos))
-
-  // Sichtbares Fenster um die aktuelle Position (überlappender Stapel).
-  const base = Math.round(pos)
-  const winIdx: number[] = []
-  for (let i = base - 3; i <= base + 3; i++) {
-    if (i < 0 || i >= len) continue
-    winIdx.push(i)
+  const cards: number[] = []
+  for (let i = Math.max(0, Math.ceil(pos) - 9); i <= Math.min(N - 1, Math.floor(pos) + 9); i++) {
+    cards.push(i)
   }
 
   return (
     <div
       style={{
-        position: 'relative',
         flex: 1,
-        minHeight: 0,
         display: 'flex',
         flexDirection: 'column',
-        padding: '10px 16px 14px',
         overflow: 'hidden',
+        padding: '4px 18px 8px',
+        gap: 10,
       }}
     >
-      <DeckBackground deck={game.deck} dark={dark} intensity="full" />
-
-      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-        {/* Hand & aktives Pokémon in einer überlappenden Reihe (kein Scroll) */}
-        <SectionLabel>Hand · {game.hand.length} · Aktiv</SectionLabel>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-end',
-            paddingBottom: 4,
-            marginBottom: 12,
-            flexShrink: 0,
-            overflow: 'hidden',
-          }}
-        >
+      {/* Aktiv + Hand */}
+      <div style={{ flex: 'none' }}>
+        <div style={{ display: 'flex', gap: 16, margin: '0 4px 6px' }}>
+          <Label color="var(--accentInk)">Aktiv</Label>
+          <Label color="var(--sub)">Hand · {game.hand.length}</Label>
+        </div>
+        <div style={{ display: 'flex', gap: 5, alignItems: 'flex-end' }}>
           <div
             style={{
-              position: 'relative',
-              width: 54,
-              height: 75,
-              flexShrink: 0,
+              flex: 1.12,
+              aspectRatio: '63 / 88',
               borderRadius: 9,
+              position: 'relative',
               overflow: 'hidden',
-              border: '2px solid var(--accent)',
-              boxShadow: 'var(--shadow)',
-              zIndex: 20,
+              background: 'var(--slot)',
+              border: '2.5px solid var(--accentInk)',
+              boxShadow: '0 4px 12px rgba(79,195,247,.45)',
             }}
           >
             <CardFace img={game.active.img} name={game.active.n} radius={9} fontSize={8} />
             <span
               style={{
                 position: 'absolute',
-                bottom: 0,
+                top: 0,
                 left: 0,
                 right: 0,
                 textAlign: 'center',
-                fontSize: 8.5,
+                fontSize: 6.5,
                 fontWeight: 800,
-                letterSpacing: 0.4,
+                letterSpacing: 0.6,
                 color: '#fff',
                 background: 'var(--accentInk)',
-                padding: '1px 0',
+                padding: '1.5px 0',
               }}
             >
               AKTIV
             </span>
           </div>
+          <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--line)', margin: '2px 3px' }} />
           {game.hand.map((c, idx) => (
             <div
               key={idx}
               style={{
+                flex: 1,
+                aspectRatio: '63 / 88',
+                borderRadius: 8,
                 position: 'relative',
-                width: 50,
-                height: 70,
-                flexShrink: 0,
-                marginLeft: idx === 0 ? 8 : -22,
-                borderRadius: 9,
                 overflow: 'hidden',
-                boxShadow: '0 2px 8px rgba(14,42,50,.18)',
-                zIndex: idx + 1,
+                background: 'var(--slot)',
               }}
             >
-              <CardFace img={c.img} name={c.n} radius={9} fontSize={8} />
+              <CardFace img={c.img} name={c.n.split(' ')[0]} radius={8} fontSize={7} />
             </div>
           ))}
         </div>
+      </div>
 
-        {/* Deck-Header */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 6,
-            flexShrink: 0,
-          }}
-        >
-          <SectionLabel>Deck durchblättern</SectionLabel>
-          <span style={{ fontSize: 12, color: 'var(--sub)' }}>
-            {di + 1} / {game.rest.length}
+      {/* Deck-Fächer + Scrubber */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4, minHeight: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', margin: '0 4px' }}>
+          <Label color="var(--sub)">Deck</Label>
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--sub)', fontVariantNumeric: 'tabular-nums' }}>
+            {raisedLabel}
+            {deckIdx1} / {N}
           </span>
         </div>
 
-        {/* Überlappender Deck-Stapel mit Schwung-Scrollen (füllt den Rest) */}
         <div
-          onWheel={(e) => {
-            velRef.current = Math.max(
-              -1.2,
-              Math.min(1.2, velRef.current + (e.deltaY / SPACING) * 0.6),
-            )
-            runMomentum()
-          }}
-          onTouchStart={(e) => {
-            stopRaf()
-            draggingRef.current = true
-            velRef.current = 0
-            lastYRef.current = e.touches[0].clientY
-            lastTRef.current = performance.now()
-          }}
-          onTouchMove={(e) => {
-            if (!draggingRef.current) return
-            const y = e.touches[0].clientY
-            const now = performance.now()
-            const dp = -(y - lastYRef.current) / SPACING
-            const dt = Math.max(1, now - lastTRef.current)
-            applyPos(posRef.current + dp)
-            velRef.current = (dp / dt) * 16
-            lastYRef.current = y
-            lastTRef.current = now
-          }}
-          onTouchEnd={() => {
-            draggingRef.current = false
-            runMomentum()
-          }}
+          onPointerDown={fanDown}
+          onPointerMove={fanMove}
+          onPointerUp={fanUp}
+          onWheel={fanWheel}
           style={{
-            position: 'relative',
             flex: 1,
             minHeight: 0,
+            position: 'relative',
+            overflow: 'hidden',
             touchAction: 'none',
+            cursor: 'grab',
+            userSelect: 'none',
           }}
         >
-          {winIdx.map((i) => {
+          {cards.map((i) => {
             const c = game.rest[i]
             const d = i - pos
-            const ad = Math.abs(d)
-            const isCurrent = i === di
+            const up = !!raised[i]
+            const x = d * 34 + (d <= -0.5 ? -50 : d >= 0.5 ? 50 : d * 100) + 44
+            const rot = Math.max(-14, Math.min(14, d * 3))
+            const y = Math.abs(d) * 3.5 + (up ? -46 : 0)
             return (
               <div
                 key={i}
+                onPointerDown={() => {
+                  tapIdx.current = i
+                }}
                 style={{
                   position: 'absolute',
                   left: '50%',
-                  top: '50%',
-                  height: '86%',
+                  top: 52,
+                  width: '88%',
+                  maxWidth: 340,
                   aspectRatio: '63 / 88',
-                  transform: `translate(-50%,-50%) translateY(${d * SPACING}px) scale(${1 - Math.min(ad, 3) * 0.06})`,
-                  zIndex: 100 - Math.round(ad * 10),
-                  borderRadius: 14,
-                  overflow: 'hidden',
-                  boxShadow: isCurrent ? 'var(--shadow)' : 'none',
-                  opacity: Math.max(0.45, 1 - ad * 0.14),
+                  zIndex: 200 + i,
+                  transform: `translateX(calc(-50% + ${x.toFixed(1)}px)) translateY(${y.toFixed(
+                    1,
+                  )}px) rotate(${rot.toFixed(2)}deg)`,
+                  transition: trans,
                 }}
               >
-                <CardFace img={c.img} name={c.n} radius={14} fontSize={15} />
-                {isCurrent && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: 8,
-                      right: 8,
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: '#fff',
-                      background: 'rgba(6,50,63,.55)',
-                      padding: '2px 8px',
-                      borderRadius: 999,
-                    }}
-                  >
-                    {i + 1} / {len}
-                  </span>
-                )}
+                <div
+                  style={{
+                    position: 'relative',
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 12,
+                    overflow: 'hidden',
+                    border: `2.5px solid ${up ? 'var(--accentInk)' : 'var(--surface)'}`,
+                    boxShadow: up
+                      ? '0 10px 22px rgba(79,195,247,.55), 0 0 0 3px rgba(79,195,247,.35)'
+                      : 'var(--shadow)',
+                  }}
+                >
+                  <CardFace img={c.img} name={c.n} radius={10} fontSize={13} />
+                </div>
               </div>
             )
           })}
         </div>
 
+        {/* Scrubber */}
         <div
+          onPointerDown={scrubDown}
+          onPointerMove={scrubMove}
+          onPointerUp={scrubUp}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 18,
-            marginTop: 10,
-            flexShrink: 0,
+            position: 'relative',
+            flex: 'none',
+            height: 34,
+            margin: '4px 2px 0',
+            borderRadius: 999,
+            background: 'var(--panel)',
+            touchAction: 'none',
+            cursor: 'pointer',
+            overflow: 'hidden',
+            userSelect: 'none',
           }}
         >
-          <ArrowBtn
-            dir="↑"
-            disabled={di === 0}
-            onClick={() => glideTo(Math.round(posRef.current) - 1)}
+          <div
+            style={{
+              position: 'absolute',
+              inset: '9px 10px',
+              pointerEvents: 'none',
+              backgroundImage: `repeating-linear-gradient(90deg, var(--line) 0, var(--line) 1.5px, transparent 1.5px, transparent ${(
+                100 / Math.max(N, 1)
+              ).toFixed(3)}%)`,
+            }}
           />
-          <span style={{ fontSize: 12, color: 'var(--sub)' }}>wischen oder Pfeile</span>
-          <ArrowBtn
-            dir="↓"
-            disabled={di === len - 1}
-            onClick={() => glideTo(Math.round(posRef.current) + 1)}
-          />
+          <div
+            style={{
+              position: 'absolute',
+              top: 4,
+              left: `calc((100% - 66px) * ${frac.toFixed(4)} + 4px)`,
+              width: 58,
+              height: 26,
+              borderRadius: 999,
+              background: 'linear-gradient(150deg, var(--accent), #2E9FD8)',
+              boxShadow: '0 3px 9px rgba(46,159,216,.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#fff',
+              fontSize: 12,
+              fontWeight: 800,
+              fontVariantNumeric: 'tabular-nums',
+              pointerEvents: 'none',
+              transition: dragging ? 'none' : 'left .18s',
+            }}
+          >
+            {deckIdx1}
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-function ListTab({ game, onChange }: { game: GameState; onChange: (g: GameState) => void }) {
-  const selTotal = Object.values(game.sel).reduce((a, b) => a + b, 0)
-
+function ListTab({
+  game,
+  selTotal,
+  canConfirm,
+  onChange,
+  onConfirm,
+}: {
+  game: GameState
+  selTotal: number
+  canConfirm: boolean
+  onChange: (g: GameState) => void
+  onConfirm: () => void
+}) {
   const toggle = (key: string, qty: number) => {
     const sel = { ...game.sel }
     const cur = sel[key] || 0
@@ -500,119 +507,114 @@ function ListTab({ game, onChange }: { game: GameState; onChange: (g: GameState)
   }
 
   return (
-    <div className="pc-scroll" style={{ padding: '10px 16px 12px' }}>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 8,
-        }}
-      >
-        {game.deck.cards.map((c) => {
-          const sel = game.sel[c.key] || 0
-          const isSel = sel > 0
-          return (
-            <button
-              key={c.key}
-              onClick={() => toggle(c.key, c.q)}
-              style={{
-                position: 'relative',
-                aspectRatio: '63 / 88',
-                borderRadius: 12,
-                overflow: 'hidden',
-                border: `3px solid ${isSel ? 'var(--accentInk)' : 'transparent'}`,
-                padding: 0,
-                background: 'var(--slot)',
-              }}
-            >
-              <CardFace img={c.img} name={c.n} radius={9} fontSize={9} />
-              <span
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="pc-scroll" style={{ padding: '2px 18px 10px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 6 }}>
+          {game.deck.cards.map((c) => {
+            const sel = game.sel[c.key] || 0
+            const isSel = sel > 0
+            return (
+              <button
+                key={c.key}
+                onClick={() => toggle(c.key, c.q)}
                 style={{
-                  position: 'absolute',
-                  bottom: 4,
-                  left: 4,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: '#fff',
-                  background: 'rgba(6,50,63,.6)',
-                  padding: '1px 6px',
-                  borderRadius: 999,
+                  position: 'relative',
+                  aspectRatio: '63 / 88',
+                  borderRadius: 8,
+                  overflow: 'hidden',
+                  border: `2.5px solid ${isSel ? 'var(--accentInk)' : 'transparent'}`,
+                  padding: 0,
+                  background: 'var(--slot)',
+                  opacity: isSel || selTotal < 6 ? 1 : 0.55,
                 }}
               >
-                ×{c.q}
-              </span>
-              {isSel && (
+                <CardFace img={c.img} name={c.n.split(' ').slice(0, 2).join(' ')} radius={6} fontSize={7} />
                 <span
                   style={{
                     position: 'absolute',
-                    top: 4,
-                    right: 4,
-                    minWidth: 20,
-                    height: 20,
-                    padding: '0 5px',
-                    borderRadius: 999,
-                    background: 'var(--accentInk)',
-                    color: '#fff',
-                    fontSize: 11,
+                    top: 2,
+                    right: 2,
+                    fontSize: 8.5,
                     fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    color: '#fff',
+                    background: 'rgba(14,42,50,.75)',
+                    padding: '1.5px 4.5px',
+                    borderRadius: 6,
+                    fontVariantNumeric: 'tabular-nums',
                   }}
                 >
-                  ✓{sel}
+                  ×{c.q}
                 </span>
-              )}
-            </button>
-          )
-        })}
+                {isSel && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      bottom: 2,
+                      left: 2,
+                      fontSize: 9,
+                      fontWeight: 800,
+                      color: '#fff',
+                      background: 'var(--accent)',
+                      padding: '2px 5px',
+                      borderRadius: 6,
+                      animation: 'popIn .15s ease',
+                    }}
+                  >
+                    ✓{sel}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '10px 18px',
+          borderTop: '1px solid var(--line)',
+        }}
+      >
+        <div style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+          Ausgewählt: <span style={{ color: 'var(--accentInk)' }}>{selTotal} / 6</span>
+        </div>
+        <button
+          onClick={onConfirm}
+          disabled={!canConfirm}
+          style={{
+            flex: 1,
+            height: 50,
+            border: 'none',
+            borderRadius: 15,
+            background: 'linear-gradient(150deg, var(--accent), #2E9FD8)',
+            color: '#fff',
+            fontSize: 15,
+            fontWeight: 700,
+            opacity: canConfirm ? 1 : 0.45,
+          }}
+        >
+          Bestätigen
+        </button>
       </div>
     </div>
   )
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function Label({ color, children }: { color: string; children: React.ReactNode }) {
   return (
-    <p
+    <span
       style={{
-        margin: '0 0 6px',
-        fontSize: 11,
+        fontSize: 10.5,
         fontWeight: 700,
-        letterSpacing: 0.6,
+        letterSpacing: 1,
         textTransform: 'uppercase',
-        color: 'var(--sub)',
+        color,
       }}
     >
       {children}
-    </p>
-  )
-}
-
-function ArrowBtn({
-  dir,
-  disabled,
-  onClick,
-}: {
-  dir: string
-  disabled: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        width: 42,
-        height: 42,
-        borderRadius: 999,
-        border: '1px solid var(--line)',
-        background: 'var(--surface)',
-        color: 'var(--accentInk)',
-        fontSize: 18,
-        opacity: disabled ? 0.4 : 1,
-      }}
-    >
-      {dir}
-    </button>
+    </span>
   )
 }

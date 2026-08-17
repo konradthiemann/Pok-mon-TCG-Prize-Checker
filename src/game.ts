@@ -160,7 +160,8 @@ export interface GameState {
   prizes: Card[]
   rest: Card[]
   sel: Record<string, number>
-  deckIdx: number
+  fanPos: number
+  raised: Record<number, boolean>
   start: number
   end?: number
 }
@@ -189,7 +190,8 @@ export function deal(deck: Deck): GameState {
     prizes,
     rest,
     sel: {},
-    deckIdx: 0,
+    fanPos: 0,
+    raised: {},
     start: Date.now(),
   }
 }

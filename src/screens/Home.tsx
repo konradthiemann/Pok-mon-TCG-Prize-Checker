@@ -93,7 +93,7 @@ interface Props {
 
 export function Home({ decks, history, theme, onToggleTheme, onPlay, onImport, onStats }: Props) {
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       <header
         style={{
           display: 'flex',

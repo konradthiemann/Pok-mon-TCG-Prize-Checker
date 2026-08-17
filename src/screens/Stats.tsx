@@ -26,7 +26,7 @@ export function Stats({ decks, history, theme, onToggleTheme, onHome }: Props) {
   const chips = [{ id: 'all', label: 'Alle Decks' }, ...decks.map((d) => ({ id: d.id, label: d.name }))]
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       <header
         style={{
           display: 'flex',

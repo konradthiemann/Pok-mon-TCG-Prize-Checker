@@ -26,6 +26,7 @@ export function Reveal({ result, onPlayAgain, onHome, onStats }: Props) {
     <div
       style={{
         flex: 1,
+        minHeight: 0,
         display: 'flex',
         flexDirection: 'column',
         background: 'var(--bg)',
