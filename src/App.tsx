@@ -24,6 +24,7 @@ import { Login } from './screens/Login'
 import { AccountSettings } from './screens/AccountSettings'
 import { ResetPassword } from './screens/ResetPassword'
 import { Paywall } from './screens/Paywall'
+import { Legal } from './screens/Legal'
 import { Drawer } from './components/Drawer'
 import { useAuth } from './auth/AuthProvider'
 
@@ -38,6 +39,9 @@ export type Screen =
   | 'login'
   | 'account'
   | 'paywall'
+  | 'impressum'
+  | 'datenschutz'
+  | 'agb'
 type Theme = 'light' | 'dark'
 
 const ONBOARDED_KEY = 'pc_onboarded_v1'
@@ -235,6 +239,10 @@ export function App() {
             onLogin={() => setScreen('login')}
           />
         )
+      case 'impressum':
+      case 'datenschutz':
+      case 'agb':
+        return <Legal doc={screen} onBack={() => setScreen('home')} />
     }
   }, [screen, decks, history, theme, game, result, premium, user])
 
@@ -249,6 +257,7 @@ export function App() {
           onToggleTheme={toggleTheme}
           onLogin={() => setScreen('login')}
           onAccount={() => setScreen('account')}
+          onLegal={(s) => { setMenuOpen(false); setScreen(s) }}
         />
       </div>
     </div>

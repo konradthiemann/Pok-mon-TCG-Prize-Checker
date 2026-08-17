@@ -5,15 +5,28 @@
       <stop offset="0.55" stop-color="#2E9FD8"/>
       <stop offset="1" stop-color="#0B5A7A"/>
     </linearGradient>
+    <linearGradient id="prize" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8FE0FF"/>
+      <stop offset="1" stop-color="#2E9FD8"/>
+    </linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <g transform="rotate(-8 256 256)">
-    <rect x="150" y="132" width="212" height="248" rx="24" fill="#ffffff" opacity="0.95"/>
-    <rect x="150" y="132" width="212" height="248" rx="24" fill="none" stroke="#0B5A7A" stroke-width="6" opacity="0.25"/>
-    <circle cx="256" cy="232" r="52" fill="#4FC3F7"/>
-    <rect x="196" y="308" width="120" height="16" rx="8" fill="#B7E7FA"/>
-    <rect x="212" y="336" width="88" height="12" rx="6" fill="#D9F1FC"/>
+  <!-- Aufgefächertes Deck: die verdeckte Preiskarte in der Mitte -->
+  <g>
+    <rect x="150" y="150" width="150" height="212" rx="20" fill="#ffffff" opacity="0.55"
+          transform="rotate(-18 225 256)"/>
+    <rect x="212" y="150" width="150" height="212" rx="20" fill="#ffffff" opacity="0.7"
+          transform="rotate(18 287 256)"/>
+    <rect x="181" y="140" width="150" height="212" rx="20" fill="url(#prize)"
+          stroke="#ffffff" stroke-width="8"/>
+    <!-- Fragezeichen = unbekannte Preiskarte -->
+    <text x="256" y="290" text-anchor="middle" font-family="Sora, system-ui, sans-serif"
+          font-size="150" font-weight="800" fill="#ffffff">?</text>
   </g>
-  <circle cx="356" cy="356" r="58" fill="none" stroke="#ffffff" stroke-width="18"/>
-  <rect x="392" y="392" width="72" height="24" rx="12" transform="rotate(45 392 392)" fill="#ffffff"/>
+  <!-- Stern-Badge = wertvoll / prized -->
+  <g transform="translate(372 372)">
+    <circle r="60" fill="#ffffff"/>
+    <path d="M0 -34 L10 -11 L35 -11 L15 5 L22 30 L0 15 L-22 30 L-15 5 L-35 -11 L-10 -11 Z"
+          fill="#2E9FD8"/>
+  </g>
 </svg>

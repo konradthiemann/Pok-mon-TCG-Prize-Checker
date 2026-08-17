@@ -107,13 +107,16 @@ export function Home({ decks, history, premium, onMenu, onPlay, onImport, onCrea
           background: 'var(--bg)',
         }}
       >
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, color: 'var(--ink)' }}>
-            Prize Checker
-          </h1>
-          <p style={{ margin: '2px 0 0', color: 'var(--sub)', fontSize: 13.5 }}>
-            Trainiere dein Preis-Rechnen
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+          <img src="/icon.svg" alt="Prized" width={40} height={40} style={{ borderRadius: 11, flexShrink: 0 }} />
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, color: 'var(--ink)' }}>
+              Prized
+            </h1>
+            <p style={{ margin: '2px 0 0', color: 'var(--sub)', fontSize: 13.5 }}>
+              Trainiere dein Preis-Gespür
+            </p>
+          </div>
         </div>
         <button
           className="btn btn-ghost"

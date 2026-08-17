@@ -1,4 +1,4 @@
-// Prize Checker Service Worker — App-Shell offline, Kartenbilder mit Cache.
+// Prized Service Worker — App-Shell offline, Kartenbilder mit Cache.
 const VERSION = 'v1'
 const SHELL = `pc-shell-${VERSION}`
 const IMG = `pc-img-${VERSION}`

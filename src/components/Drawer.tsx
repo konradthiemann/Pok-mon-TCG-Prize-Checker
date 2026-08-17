@@ -7,9 +7,10 @@ interface Props {
   onToggleTheme: () => void
   onLogin: () => void
   onAccount: () => void
+  onLegal: (doc: 'impressum' | 'datenschutz' | 'agb') => void
 }
 
-export function Drawer({ open, theme, onClose, onToggleTheme, onLogin, onAccount }: Props) {
+export function Drawer({ open, theme, onClose, onToggleTheme, onLogin, onAccount, onLegal }: Props) {
   const { user, configured, signOut } = useAuth()
 
   const row = (icon: string, label: string, onClick: () => void, danger = false) => (
@@ -122,8 +123,23 @@ export function Drawer({ open, theme, onClose, onToggleTheme, onLogin, onAccount
           {user && row('🚪', 'Abmelden', async () => { onClose(); await signOut() }, true)}
         </nav>
 
-        <div style={{ marginTop: 'auto', padding: '14px 20px', color: 'var(--sub)', fontSize: 11 }}>
-          Prize Checker
+        <div
+          style={{
+            marginTop: 'auto',
+            borderTop: '1px solid var(--line)',
+            padding: '10px 8px 4px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+          }}
+        >
+          {row('📄', 'Impressum', () => onLegal('impressum'))}
+          {row('🔒', 'Datenschutz', () => onLegal('datenschutz'))}
+          {row('📜', 'Nutzungsbedingungen', () => onLegal('agb'))}
+        </div>
+
+        <div style={{ padding: '10px 20px 16px', color: 'var(--sub)', fontSize: 11 }}>
+          Prized · inoffizielles Fan-Projekt
         </div>
       </aside>
     </>

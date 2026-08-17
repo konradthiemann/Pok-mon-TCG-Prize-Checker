@@ -1,7 +1,7 @@
 {
-  "name": "Prize Checker",
-  "short_name": "Prize Checker",
-  "description": "Trainiere dein Preis-Rechnen im Pokémon TCG.",
+  "name": "Prized",
+  "short_name": "Prized",
+  "description": "Trainiere dein Preis-Gespür im Sammelkartenspiel.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

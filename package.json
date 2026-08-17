@@ -1,9 +1,9 @@
 {
-  "name": "prize-checker",
+  "name": "prized",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Prize Checker — Trainings-Minispiel für das Pokémon TCG: errate die 6 verdeckten Preiskarten per Ausschlussprinzip.",
+  "description": "Prized — Trainings-Minispiel fürs Sammelkartenspiel: errate die 6 verdeckten Preiskarten per Ausschlussprinzip.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

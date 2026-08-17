@@ -1,4 +1,4 @@
-// Prize-Checker-Server: liefert die statisch gebaute SPA aus `dist/`.
+// Prized-Server: liefert die statisch gebaute SPA aus `dist/`.
 // Die App ist rein clientseitig (localStorage) — kein Backend-State nötig.
 import express from 'express'
 import path from 'node:path'
@@ -20,5 +20,5 @@ app.get('*', (_req, res) => {
 })
 
 app.listen(PORT, () => {
-  console.log(`Prize Checker läuft auf Port ${PORT}`)
+  console.log(`Prized läuft auf Port ${PORT}`)
 })
