@@ -1,5 +1,6 @@
-import { useState, type CSSProperties } from 'react'
-import { type CardInput, type CardType } from '../game'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { type CardInput, type CardType, parseImport } from '../game'
+import { resolveCardApi } from '../cardImages'
 import { CardFace } from '../CardFace'
 
 interface Props {
@@ -40,23 +41,45 @@ function typeOf(supertype: string): CardType {
   return 'T'
 }
 
+function keyOf(c: Pick<CardInput, 'n' | 's' | 'c'>): string {
+  return c.n + '|' + c.s + c.c
+}
+
+function imgOf(api: string | null): string {
+  return api ? 'https://images.pokemontcg.io/' + api + '.png' : ''
+}
+
 function mapCard(c: ApiCard): BuilderCard {
   const basic = c.subtypes?.includes('Basic') ?? false
   const t = typeOf(c.supertype)
   const api = `${c.set.id}/${c.number}`
+  const s = (c.set.ptcgoCode || c.set.id).toUpperCase()
   return {
     n: c.name,
-    s: (c.set.ptcgoCode || c.set.id).toUpperCase(),
+    s,
     c: c.number,
     api,
     t,
     q: 0,
     b: t === 'P' && basic ? 1 : undefined,
-    img: c.images?.small || `https://images.pokemontcg.io/${api}.png`,
-    key: `${c.name}|${(c.set.ptcgoCode || c.set.id).toUpperCase()}${c.number}`,
+    img: c.images?.small || imgOf(api),
+    key: keyOf({ n: c.name, s, c: c.number }),
     basic,
   }
 }
+
+// Eine geparste Deckliste-Zeile in eine Builder-Karte übersetzen.
+// Basis-Energie darf die 4er-Grenze überschreiten (basic = true).
+function fromInput(ci: CardInput): BuilderCard {
+  return {
+    ...ci,
+    img: imgOf(ci.api),
+    key: keyOf(ci),
+    basic: ci.t === 'E',
+  }
+}
+
+type Tab = 'paste' | 'search' | 'deck'
 
 export function DeckBuilder({ onBack, onSave }: Props) {
   const [name, setName] = useState('')
@@ -65,11 +88,16 @@ export function DeckBuilder({ onBack, onSave }: Props) {
   const [selected, setSelected] = useState<Record<string, BuilderCard>>({})
   const [loading, setLoading] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
-  const [tab, setTab] = useState<'search' | 'deck'>('search')
+  const [paste, setPaste] = useState('')
+  const [parseErrors, setParseErrors] = useState<{ line: number; msg: string }[]>([])
+  const [tab, setTab] = useState<Tab>('paste')
+  const alive = useRef(true)
+  useEffect(() => () => { alive.current = false }, [])
 
   async function search(e: React.FormEvent) {
     e.preventDefault()
-    const term = query.trim()
+    // Anführungszeichen entfernen – sie brechen die Lucene-Query (HTTP 500).
+    const term = query.trim().replace(/["']/g, ' ').trim()
     if (!term) return
     setLoading(true)
     setSearchError(null)
@@ -80,13 +108,51 @@ export function DeckBuilder({ onBack, onSave }: Props) {
       )
       if (!res.ok) throw new Error(`Suche fehlgeschlagen (${res.status})`)
       const json = (await res.json()) as { data: ApiCard[] }
+      if (json.data.length === 0) setSearchError('Keine Karten gefunden. Nutze „Liste einfügen".')
       setResults(json.data.map(mapCard))
-    } catch (err) {
-      setSearchError(err instanceof Error ? err.message : 'Suche fehlgeschlagen')
+    } catch {
+      setSearchError('Karten-API nicht erreichbar. Nutze stattdessen „Liste einfügen".')
       setResults([])
     } finally {
       setLoading(false)
     }
+  }
+
+  // Deckliste einfügen: parst den Text und übernimmt die Karten ins Deck.
+  function applyPaste() {
+    const parsed = parseImport(paste)
+    if (parsed.cards.length === 0 && parsed.errors.length === 0) return
+    setSelected((prev) => {
+      const next = { ...prev }
+      parsed.cards.forEach((ci) => {
+        const card = fromInput(ci)
+        const cur = next[card.key]
+        next[card.key] = { ...card, q: (cur?.q ?? 0) + ci.q }
+      })
+      return next
+    })
+    setParseErrors(parsed.errors)
+    setTab('deck')
+    // Bilder für Karten ohne bekannte Set-Zuordnung nachladen (best effort).
+    // Sequenziell + gedrosselt, damit die anonyme pokemontcg.io-API nicht
+    // rate-limitet (paralleles Feuern lässt sonst alle Anfragen scheitern).
+    void (async () => {
+      for (const ci of parsed.cards) {
+        if (!alive.current) return
+        if (ci.api) continue
+        const api = await resolveCardApi(ci)
+        if (!alive.current) return
+        if (api) {
+          const key = keyOf(ci)
+          setSelected((prev) => {
+            const cur = prev[key]
+            if (!cur || cur.api) return prev
+            return { ...prev, [key]: { ...cur, api, img: imgOf(api) } }
+          })
+        }
+        await new Promise((r) => setTimeout(r, 150))
+      }
+    })()
   }
 
   const list = Object.values(selected)
@@ -98,7 +164,6 @@ export function DeckBuilder({ onBack, onSave }: Props) {
     setSelected((prev) => {
       const cur = prev[card.key]
       const q = Math.max(0, Math.min((cur?.q ?? 0) + delta, maxFor(card)))
-      if (delta > 0 && total >= 60 && !cur) return prev
       if (delta > 0 && total >= 60 && q > (cur?.q ?? 0)) return prev
       const next = { ...prev }
       if (q === 0) delete next[card.key]
@@ -154,7 +219,43 @@ export function DeckBuilder({ onBack, onSave }: Props) {
         </div>
       </div>
 
-      {tab === 'search' ? (
+      {tab === 'paste' && (
+        <div className="pc-scroll" style={{ padding: '2px 16px 16px' }}>
+          <p style={{ color: 'var(--sub)', fontSize: 13.5, margin: '2px 0 8px', lineHeight: 1.5 }}>
+            Füge deine Deckliste ein (eine Karte pro Zeile, z. B. „4 Beldum CRI 59"). Kopfzeilen wie
+            „Pokémon: 19" werden ignoriert.
+          </p>
+          <textarea
+            value={paste}
+            onChange={(e) => setPaste(e.target.value)}
+            placeholder={'Pokémon: 6\n4 Dreepy TWM 128\n2 Dragapult ex TWM 130\n…'}
+            rows={12}
+            style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.5, fontVariantNumeric: 'tabular-nums' }}
+          />
+          <button
+            onClick={applyPaste}
+            disabled={!paste.trim()}
+            className="btn btn-primary"
+            style={{ marginTop: 10, width: '100%', padding: '13px 0', opacity: paste.trim() ? 1 : 0.4 }}
+          >
+            Karten übernehmen
+          </button>
+          {parseErrors.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <p style={{ color: 'var(--bad)', fontSize: 13, fontWeight: 700, margin: '0 0 4px' }}>
+                {parseErrors.length} Zeile{parseErrors.length > 1 ? 'n' : ''} nicht erkannt:
+              </p>
+              {parseErrors.map((e) => (
+                <p key={e.line} style={{ color: 'var(--sub)', fontSize: 12.5, margin: '2px 0' }}>
+                  Zeile {e.line}: {e.msg}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'search' && (
         <>
           <form onSubmit={search} style={{ display: 'flex', gap: 8, padding: '0 16px 10px' }}>
             <input
@@ -176,7 +277,7 @@ export function DeckBuilder({ onBack, onSave }: Props) {
             {searchError && <p style={{ color: 'var(--bad)', fontSize: 13 }}>{searchError}</p>}
             {!searchError && results.length === 0 && (
               <p style={{ color: 'var(--sub)', fontSize: 13.5, textAlign: 'center', marginTop: 24 }}>
-                Suche nach Karten, um dein Deck zu füllen.
+                Suche nach einzelnen Karten, oder nutze „Liste einfügen".
               </p>
             )}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
@@ -218,7 +319,9 @@ export function DeckBuilder({ onBack, onSave }: Props) {
             </div>
           </div>
         </>
-      ) : (
+      )}
+
+      {tab === 'deck' && (
         <div className="pc-scroll" style={{ padding: '2px 16px 16px' }}>
           {list.length === 0 && (
             <p style={{ color: 'var(--sub)', fontSize: 13.5, textAlign: 'center', marginTop: 24 }}>
@@ -268,6 +371,7 @@ export function DeckBuilder({ onBack, onSave }: Props) {
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}
       >
+        <TabBtn active={tab === 'paste'} label="Liste" onClick={() => setTab('paste')} />
         <TabBtn active={tab === 'search'} label="Suche" onClick={() => setTab('search')} />
         <TabBtn active={tab === 'deck'} label={`Deck (${total})`} onClick={() => setTab('deck')} />
         <button

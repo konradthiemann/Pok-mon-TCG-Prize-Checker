@@ -44,7 +44,18 @@ export const SETMAP: Record<string, string> = {
   SSP: 'sv8',
   PRE: 'sv8pt5',
   JTG: 'sv9',
+  DRI: 'sv10',
   SVE: 'sve',
+  // Mega-Evolution-Ära (verifizierte Set-IDs)
+  MEG: 'me1',
+  PFL: 'me2',
+  ASC: 'me2pt5',
+  POR: 'me3',
+  CRI: 'me4',
+  PBL: 'me5',
+  BLK: 'zsv10pt5',
+  // Basis-Energie: "Metal Energy MEE 8" -> Basic Metal Energy sve/8
+  MEE: 'sve',
 }
 
 export const ONBOARDING = [
