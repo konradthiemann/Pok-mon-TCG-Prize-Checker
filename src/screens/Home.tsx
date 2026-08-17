@@ -1,4 +1,4 @@
-import { type Deck, type Round, fmt, progressOf } from '../game'
+import { type Deck, type Round, fmt, isDeckFree, progressOf } from '../game'
 import { CardFace } from '../CardFace'
 import { NavBar } from './NavBar'
 
@@ -84,6 +84,7 @@ function ProgressHeader({ history }: { history: Round[] }) {
 interface Props {
   decks: Deck[]
   history: Round[]
+  premium: boolean
   onMenu: () => void
   onPlay: (deck: Deck) => void
   onImport: () => void
@@ -91,7 +92,7 @@ interface Props {
   onStats: () => void
 }
 
-export function Home({ decks, history, onMenu, onPlay, onImport, onCreate, onStats }: Props) {
+export function Home({ decks, history, premium, onMenu, onPlay, onImport, onCreate, onStats }: Props) {
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       <header
@@ -128,7 +129,13 @@ export function Home({ decks, history, onMenu, onPlay, onImport, onCreate, onSta
         <ProgressHeader history={history} />
 
         {decks.map((d) => (
-          <DeckTile key={d.id} deck={d} history={history} onPlay={() => onPlay(d)} />
+          <DeckTile
+            key={d.id}
+            deck={d}
+            history={history}
+            locked={!premium && !isDeckFree(d)}
+            onPlay={() => onPlay(d)}
+          />
         ))}
 
         <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
@@ -171,7 +178,17 @@ export function Home({ decks, history, onMenu, onPlay, onImport, onCreate, onSta
   )
 }
 
-function DeckTile({ deck, history, onPlay }: { deck: Deck; history: Round[]; onPlay: () => void }) {
+function DeckTile({
+  deck,
+  history,
+  locked,
+  onPlay,
+}: {
+  deck: Deck
+  history: Round[]
+  locked: boolean
+  onPlay: () => void
+}) {
   const rounds = history.filter((r) => r.d === deck.id)
   const best = rounds.length ? Math.min(...rounds.map((r) => r.t)) : null
   const acc = rounds.length
@@ -231,6 +248,21 @@ function DeckTile({ deck, history, onPlay }: { deck: Deck; history: Round[]; onP
           >
             {deck.format}
           </span>
+          {locked && (
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--sub)',
+                background: 'var(--line)',
+                padding: '2px 8px',
+                borderRadius: 999,
+                marginLeft: 'auto',
+              }}
+            >
+              🔒 Premium
+            </span>
+          )}
         </div>
         <p style={{ margin: '4px 0 10px', fontSize: 12.5, color: 'var(--sub)' }}>
           Best {best != null ? fmt(best) : '—'} · {acc != null ? acc + '%' : '—'} Genau. ·{' '}
@@ -247,12 +279,22 @@ function DeckTile({ deck, history, onPlay }: { deck: Deck; history: Round[]; onP
             padding: '9px 20px',
             fontSize: 14,
             fontWeight: 800,
-            color: '#06323f',
-            background: 'linear-gradient(140deg, #5FD0FF, #2E9FD8 55%, #1B7FB8)',
-            boxShadow: '0 6px 16px rgba(27,127,184,.35)',
+            color: locked ? 'var(--ink)' : '#06323f',
+            background: locked
+              ? 'var(--accentSoft)'
+              : 'linear-gradient(140deg, #5FD0FF, #2E9FD8 55%, #1B7FB8)',
+            boxShadow: locked ? 'none' : '0 6px 16px rgba(27,127,184,.35)',
           }}
         >
-          <span style={{ fontSize: 11 }}>▶</span> Spielen
+          {locked ? (
+            <>
+              <span style={{ fontSize: 12 }}>🔒</span> Freischalten
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: 11 }}>▶</span> Spielen
+            </>
+          )}
         </button>
       </div>
     </div>

@@ -7,6 +7,7 @@ import {
   type Round,
   cardsOf,
   deal,
+  isDeckFree,
   parseImport,
   score,
 } from './game'
@@ -22,6 +23,7 @@ import { Stats } from './screens/Stats'
 import { Login } from './screens/Login'
 import { AccountSettings } from './screens/AccountSettings'
 import { ResetPassword } from './screens/ResetPassword'
+import { Paywall } from './screens/Paywall'
 import { Drawer } from './components/Drawer'
 import { useAuth } from './auth/AuthProvider'
 
@@ -35,10 +37,12 @@ export type Screen =
   | 'stats'
   | 'login'
   | 'account'
+  | 'paywall'
 type Theme = 'light' | 'dark'
 
 const ONBOARDED_KEY = 'pc_onboarded_v1'
 const THEME_KEY = 'pc_theme_v1'
+const PREMIUM_KEY = 'pc_premium_v1'
 
 export function App() {
   const { recovery, user, ready, configured } = useAuth()
@@ -53,6 +57,8 @@ export function App() {
   const [history, setHistory] = useState<Round[]>(() => loadHistory())
   const [game, setGame] = useState<GameState | null>(null)
   const [result, setResult] = useState<Result | null>(null)
+  // Premium-Status (schaltet das Spielen eigener Decks frei). Zahlung folgt später.
+  const [premium] = useState(() => localStorage.getItem(PREMIUM_KEY) === '1')
 
   // Aktueller Speicherort: Cloud, sobald ein User eingeloggt ist, sonst localStorage.
   const cloud = configured && !!user
@@ -104,6 +110,11 @@ export function App() {
   }
 
   const startGame = (deck: Deck) => {
+    // Nur Demo-Decks sind ohne Premium spielbar; sonst Paywall.
+    if (!premium && !isDeckFree(deck)) {
+      setScreen('paywall')
+      return
+    }
     setResult(null)
     setGame(deal(deck))
     setScreen('game')
@@ -163,6 +174,7 @@ export function App() {
     <Home
       decks={decks}
       history={history}
+      premium={premium}
       onMenu={() => setMenuOpen(true)}
       onPlay={startGame}
       onImport={() => setScreen('import')}
@@ -215,8 +227,16 @@ export function App() {
             onHome={() => setScreen('home')}
           />
         )
+      case 'paywall':
+        return (
+          <Paywall
+            onBack={() => setScreen('home')}
+            loggedIn={!!user}
+            onLogin={() => setScreen('login')}
+          />
+        )
     }
-  }, [screen, decks, history, theme, game, result])
+  }, [screen, decks, history, theme, game, result, premium, user])
 
   return (
     <div className={`pc-root ${theme === 'dark' ? 'dark' : ''}`}>

@@ -122,6 +122,14 @@ export function defaultDecks(): Deck[] {
   ]
 }
 
+// Kostenlos spielbare Demo-Decks. Alle übrigen (eigene, importierte) Decks
+// benötigen Premium; das Spielen löst sonst die Paywall aus.
+export const DEMO_DECK_IDS = ['dragapult']
+
+export function isDeckFree(deck: Deck): boolean {
+  return DEMO_DECK_IDS.includes(deck.id)
+}
+
 export function seedHistory(): Round[] {
   const now = Date.now()
   const h: Round[] = []
