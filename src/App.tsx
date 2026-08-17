@@ -43,7 +43,6 @@ type Theme = 'light' | 'dark'
 
 const ONBOARDED_KEY = 'pc_onboarded_v1'
 const THEME_KEY = 'pc_theme_v1'
-const PREMIUM_KEY = 'pc_premium_v1'
 
 export function App() {
   const { recovery, user, ready, configured } = useAuth()
@@ -58,8 +57,8 @@ export function App() {
   const [history, setHistory] = useState<Round[]>(() => loadHistory())
   const [game, setGame] = useState<GameState | null>(null)
   const [result, setResult] = useState<Result | null>(null)
-  // Premium-Status (schaltet das Spielen eigener Decks frei). Zahlung folgt später.
-  const [premium] = useState(() => localStorage.getItem(PREMIUM_KEY) === '1')
+  // Community-Test: aktuell alles kostenlos, Paywall deaktiviert. Zahlung folgt später.
+  const [premium] = useState(true)
 
   // Aktueller Speicherort: Cloud, sobald ein User eingeloggt ist, sonst localStorage.
   const cloud = configured && !!user
