@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  type CardInput,
   type Deck,
   type GameState,
   type Result,
@@ -16,7 +15,6 @@ import { cloudInsertRound, cloudLoadDecks, cloudLoadHistory, cloudUpsertDeck } f
 import { Onboarding } from './screens/Onboarding'
 import { Home } from './screens/Home'
 import { ImportScreen } from './screens/ImportScreen'
-import { DeckBuilder } from './screens/DeckBuilder'
 import { GameScreen } from './screens/GameScreen'
 import { Reveal } from './screens/Reveal'
 import { Stats } from './screens/Stats'
@@ -32,7 +30,6 @@ export type Screen =
   | 'onboarding'
   | 'home'
   | 'import'
-  | 'builder'
   | 'game'
   | 'reveal'
   | 'stats'
@@ -162,16 +159,6 @@ export function App() {
     setScreen('home')
   }
 
-  const saveBuiltDeck = (name: string, cards: CardInput[]) => {
-    persistDeck({
-      id: 'd' + Date.now(),
-      name: name.trim(),
-      format: 'Standard',
-      cards: cardsOf(cards),
-    })
-    setScreen('home')
-  }
-
   const themeCls = theme === 'dark' ? 'pc dark' : 'pc'
 
   const homeScreen = (
@@ -182,7 +169,6 @@ export function App() {
       onMenu={() => setMenuOpen(true)}
       onPlay={startGame}
       onImport={() => setScreen('import')}
-      onCreate={() => setScreen('builder')}
       onStats={() => setScreen('stats')}
     />
   )
@@ -195,8 +181,6 @@ export function App() {
         return homeScreen
       case 'import':
         return <ImportScreen onBack={() => setScreen('home')} onSave={saveImportedDeck} />
-      case 'builder':
-        return <DeckBuilder onBack={() => setScreen('home')} onSave={saveBuiltDeck} />
       case 'login':
         return <Login onBack={() => setScreen('home')} onDone={() => setScreen('home')} />
       case 'account':

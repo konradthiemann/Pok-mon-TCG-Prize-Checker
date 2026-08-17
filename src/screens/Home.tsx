@@ -88,11 +88,10 @@ interface Props {
   onMenu: () => void
   onPlay: (deck: Deck) => void
   onImport: () => void
-  onCreate: () => void
   onStats: () => void
 }
 
-export function Home({ decks, history, premium, onMenu, onPlay, onImport, onCreate, onStats }: Props) {
+export function Home({ decks, history, premium, onMenu, onPlay, onImport, onStats }: Props) {
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       <header
@@ -141,11 +140,11 @@ export function Home({ decks, history, premium, onMenu, onPlay, onImport, onCrea
           />
         ))}
 
-        <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+        <div style={{ marginTop: 6 }}>
           <button
-            onClick={onCreate}
+            onClick={onImport}
             style={{
-              flex: 1,
+              width: '100%',
               padding: '18px',
               borderRadius: 18,
               border: 'none',
@@ -156,22 +155,7 @@ export function Home({ decks, history, premium, onMenu, onPlay, onImport, onCrea
               boxShadow: '0 6px 16px rgba(27,127,184,.3)',
             }}
           >
-            ＋ Deck erstellen
-          </button>
-          <button
-            onClick={onImport}
-            style={{
-              flex: 1,
-              padding: '18px',
-              borderRadius: 18,
-              border: '2px dashed var(--accent)',
-              background: 'var(--accentSoft)',
-              color: 'var(--accentInk)',
-              fontWeight: 700,
-              fontSize: 15,
-            }}
-          >
-            ⬇ Importieren
+            ⬇ Deck importieren
           </button>
         </div>
       </div>
