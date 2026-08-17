@@ -5,12 +5,11 @@ import { NavBar } from './NavBar'
 interface Props {
   decks: Deck[]
   history: Round[]
-  theme: 'light' | 'dark'
-  onToggleTheme: () => void
+  onMenu: () => void
   onHome: () => void
 }
 
-export function Stats({ decks, history, theme, onToggleTheme, onHome }: Props) {
+export function Stats({ decks, history, onMenu, onHome }: Props) {
   const [filter, setFilter] = useState<string>('all')
   const rounds = history.filter((x) => filter === 'all' || x.d === filter)
   const dName: Record<string, string> = {}
@@ -33,16 +32,20 @@ export function Stats({ decks, history, theme, onToggleTheme, onHome }: Props) {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '20px 20px 10px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+          background: 'var(--bg)',
         }}
       >
         <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, color: 'var(--ink)' }}>Statistik</h1>
         <button
           className="btn btn-ghost"
-          onClick={onToggleTheme}
-          style={{ fontSize: 20, padding: 8 }}
-          aria-label="Theme wechseln"
+          onClick={onMenu}
+          style={{ fontSize: 22, padding: 8, color: 'var(--ink)' }}
+          aria-label="Menü öffnen"
         >
-          {theme === 'dark' ? '☀️' : '🌙'}
+          ☰
         </button>
       </header>
 

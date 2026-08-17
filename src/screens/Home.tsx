@@ -84,14 +84,14 @@ function ProgressHeader({ history }: { history: Round[] }) {
 interface Props {
   decks: Deck[]
   history: Round[]
-  theme: 'light' | 'dark'
-  onToggleTheme: () => void
+  onMenu: () => void
   onPlay: (deck: Deck) => void
   onImport: () => void
+  onCreate: () => void
   onStats: () => void
 }
 
-export function Home({ decks, history, theme, onToggleTheme, onPlay, onImport, onStats }: Props) {
+export function Home({ decks, history, onMenu, onPlay, onImport, onCreate, onStats }: Props) {
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       <header
@@ -100,6 +100,10 @@ export function Home({ decks, history, theme, onToggleTheme, onPlay, onImport, o
           alignItems: 'flex-start',
           justifyContent: 'space-between',
           padding: '20px 20px 12px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+          background: 'var(--bg)',
         }}
       >
         <div>
@@ -112,11 +116,11 @@ export function Home({ decks, history, theme, onToggleTheme, onPlay, onImport, o
         </div>
         <button
           className="btn btn-ghost"
-          onClick={onToggleTheme}
-          style={{ fontSize: 20, padding: 8 }}
-          aria-label="Theme wechseln"
+          onClick={onMenu}
+          style={{ fontSize: 22, padding: 8, color: 'var(--ink)' }}
+          aria-label="Menü öffnen"
         >
-          {theme === 'dark' ? '☀️' : '🌙'}
+          ☰
         </button>
       </header>
 
@@ -127,22 +131,39 @@ export function Home({ decks, history, theme, onToggleTheme, onPlay, onImport, o
           <DeckTile key={d.id} deck={d} history={history} onPlay={() => onPlay(d)} />
         ))}
 
-        <button
-          onClick={onImport}
-          style={{
-            width: '100%',
-            marginTop: 6,
-            padding: '18px',
-            borderRadius: 18,
-            border: '2px dashed var(--accent)',
-            background: 'var(--accentSoft)',
-            color: 'var(--accentInk)',
-            fontWeight: 700,
-            fontSize: 15.5,
-          }}
-        >
-          ＋ Deck importieren
-        </button>
+        <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+          <button
+            onClick={onCreate}
+            style={{
+              flex: 1,
+              padding: '18px',
+              borderRadius: 18,
+              border: 'none',
+              background: 'linear-gradient(140deg, #5FD0FF, #2E9FD8 55%, #1B7FB8)',
+              color: '#06323f',
+              fontWeight: 800,
+              fontSize: 15,
+              boxShadow: '0 6px 16px rgba(27,127,184,.3)',
+            }}
+          >
+            ＋ Deck erstellen
+          </button>
+          <button
+            onClick={onImport}
+            style={{
+              flex: 1,
+              padding: '18px',
+              borderRadius: 18,
+              border: '2px dashed var(--accent)',
+              background: 'var(--accentSoft)',
+              color: 'var(--accentInk)',
+              fontWeight: 700,
+              fontSize: 15,
+            }}
+          >
+            ⬇ Importieren
+          </button>
+        </div>
       </div>
 
       <NavBar active="decks" onDecks={() => {}} onStats={onStats} />

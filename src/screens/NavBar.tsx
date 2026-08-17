@@ -37,6 +37,11 @@ export function NavBar({ active, onDecks, onStats }: Props) {
         borderTop: '1px solid var(--line)',
         background: 'var(--surface)',
         paddingBottom: 'env(safe-area-inset-bottom)',
+        position: 'sticky',
+        bottom: 0,
+        zIndex: 20,
+        flexShrink: 0,
+        boxShadow: '0 -6px 18px rgba(14,42,50,.06)',
       }}
     >
       {item('decks', '🂠', 'Decks', onDecks)}
