@@ -39,6 +39,11 @@ export async function cloudUpsertDeck(userId: string, deck: Deck): Promise<void>
     )
 }
 
+export async function cloudDeleteDeck(userId: string, deckId: string): Promise<void> {
+  if (!supabase) return
+  await supabase.from('decks').delete().match({ user_id: userId, id: deckId })
+}
+
 export async function cloudLoadHistory(): Promise<Round[]> {
   if (!supabase) return []
   const { data, error } = await supabase.from('rounds').select('d,t,h,ts').order('ts')

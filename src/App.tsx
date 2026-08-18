@@ -12,7 +12,7 @@ import {
 } from './game'
 import { loadDecks, loadHistory, saveDecks, saveHistory } from './storage'
 import { resolveDeckImages } from './cardImages'
-import { cloudInsertRound, cloudLoadDecks, cloudLoadHistory, cloudUpsertDeck } from './sync'
+import { cloudDeleteDeck, cloudInsertRound, cloudLoadDecks, cloudLoadHistory, cloudUpsertDeck } from './sync'
 import { Onboarding } from './screens/Onboarding'
 import { Home } from './screens/Home'
 import { ImportScreen } from './screens/ImportScreen'
@@ -178,6 +178,15 @@ export function App() {
     })
   }
 
+  const deleteDeck = (deckId: string) => {
+    setDecks((prev) => {
+      const next = prev.filter((d) => d.id !== deckId)
+      if (cloudRef.current && user) cloudDeleteDeck(user.id, deckId)
+      else saveDecks(next)
+      return next
+    })
+  }
+
   const confirm = (g: GameState) => {
     const ended: GameState = { ...g, end: Date.now() }
     const r = score(ended)
@@ -220,6 +229,11 @@ export function App() {
       onPlay={startGame}
       onImport={() => setScreen('import')}
       onStats={() => setScreen('stats')}
+      onDelete={deleteDeck}
+      onRename={(id, name) => {
+        const deck = decks.find((d) => d.id === id)
+        if (deck) updateDeck({ ...deck, name })
+      }}
     />
   )
 
