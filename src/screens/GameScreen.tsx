@@ -29,6 +29,7 @@ export function GameScreen({ game, dark, onChange, onQuit, onConfirm }: Props) {
   }, [game.end])
 
   const selTotal = Object.values(game.sel).reduce((a, b) => a + b, 0)
+  const raisedCount = Object.values(raised).filter(Boolean).length
   const el = ((game.end || Date.now()) - game.start) / 1000
   // Anteil der verstrichenen Zeit (0→1), geclampt auf 1
   const fill = Math.min(1, el / LIMIT)
@@ -83,7 +84,7 @@ export function GameScreen({ game, dark, onChange, onQuit, onConfirm }: Props) {
             <line x1="2" y1="2" x2="12" y2="12" /><line x1="12" y1="2" x2="2" y2="12" />
           </svg>
         </button>
-        <ClockTimer elapsed={el} fill={fill} />
+        <ClockTimer elapsed={el} fill={fill} raisedCount={raisedCount} />
       </div>
 
       {tab === 'table' ? (
@@ -178,6 +179,13 @@ function TableTab({
   const deckIdx1 = N ? Math.round(pos) + 1 : 0
 
   const raisedCount = Object.values(raised).filter(Boolean).length
+  // Typ-Lock: erste angehobene Karte bestimmt den erlaubten Typ (P/T/E)
+  const raisedType = (() => {
+    for (const [idx, up] of Object.entries(raised)) {
+      if (up) return game.rest[+idx]?.t ?? null
+    }
+    return null
+  })()
   const raisedLabel = raisedCount > 0 ? `${raisedCount} angehoben · ` : ''
 
   const fdrag = useRef<{ x: number; pos: number } | null>(null)
@@ -212,7 +220,14 @@ function TableTab({
     const tap = !fanMoved.current && idx != null
     fdrag.current = null
     tapIdx.current = null
-    if (tap) setRaised({ ...raised, [idx!]: !raised[idx!] })
+    if (tap) {
+      const card = game.rest[idx!]
+      const isUp = !!raised[idx!]
+      // Anheben: nur wenn gleicher Typ oder noch nichts angehoben
+      if (isUp || !raisedType || card.t === raisedType) {
+        setRaised({ ...raised, [idx!]: !isUp })
+      }
+    }
     else setFanPos(Math.round(pos))
   }
   const fanWheel = (e: React.WheelEvent) => {
@@ -649,7 +664,7 @@ function RaisedShelf({
               fontVariantNumeric: 'tabular-nums',
             }}
           >
-            {count}/{card.q}
+            {count}
           </span>
         </button>
       ))}
@@ -658,14 +673,23 @@ function RaisedShelf({
 }
 
 // Kreisförmige Uhr: Bogen füllt sich im Uhrzeigersinn. Zeigt die Zeit als Text.
-// Dezent und informativ, nicht wertend — Farbe bleibt neutral.
-function ClockTimer({ elapsed, fill }: { elapsed: number; fill: number }) {
+// Ringfarbe wechselt dezent von Grün über Accent zu warmem Rot, je mehr Karten
+// angehoben sind — ein visueller Hinweis ohne aufdringliche Warnung.
+function ClockTimer({ elapsed, fill, raisedCount }: { elapsed: number; fill: number; raisedCount: number }) {
   const r = 15
   const circ = 2 * Math.PI * r
   const dashOffset = circ * (1 - fill)
   const m = Math.floor(elapsed / 60)
   const s = Math.floor(elapsed % 60)
   const label = m + ':' + (s < 10 ? '0' : '') + s
+
+  // 0 raised → grün (#2fbf71), ~10 → accent (#4fc3f7), 15+ → warm rot (#d97850)
+  const t = Math.min(1, raisedCount / 15)
+  const ringColor = raisedCount === 0
+    ? '#2fbf71'
+    : t < 0.5
+      ? `color-mix(in srgb, #2fbf71 ${Math.round((1 - t * 2) * 100)}%, #4fc3f7)`
+      : `color-mix(in srgb, #4fc3f7 ${Math.round((1 - (t - 0.5) * 2) * 100)}%, #d97850)`
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -686,13 +710,13 @@ function ClockTimer({ elapsed, fill }: { elapsed: number; fill: number }) {
           cy="18"
           r={r}
           fill="none"
-          stroke="var(--accent)"
+          stroke={ringColor}
           strokeWidth="3"
           strokeLinecap="round"
           strokeDasharray={circ}
           strokeDashoffset={dashOffset}
           transform="rotate(-90 18 18)"
-          style={{ transition: 'stroke-dashoffset .3s linear' }}
+          style={{ transition: 'stroke-dashoffset .3s linear, stroke .5s ease' }}
         />
       </svg>
     </div>
