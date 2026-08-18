@@ -171,13 +171,27 @@ function Big({ value, label }: { value: string; label: string }) {
 function Chart({ rounds }: { rounds: Round[] }) {
   const t = useT()
   const maxT = Math.max(...rounds.map((x) => x.t)) * 1.15 || 1
-  const px = (i: number) => (rounds.length > 1 ? 6 + i * (308 / (rounds.length - 1)) : 160)
-  const timePts = rounds
-    .map((x, i) => px(i).toFixed(1) + ',' + (104 - (x.t / maxT) * 92).toFixed(1))
-    .join(' ')
-  const accPts = rounds
-    .map((x, i) => px(i).toFixed(1) + ',' + (104 - (x.h / 6) * 92).toFixed(1))
-    .join(' ')
+  const left = 38
+  const right = 30
+  const chartW = 320
+  const plotW = chartW - left - right
+  const px = (i: number) => (rounds.length > 1 ? left + i * (plotW / (rounds.length - 1)) : left + plotW / 2)
+  const yT = (v: number) => 104 - (v / maxT) * 84
+  const yA = (v: number) => 104 - (v / 6) * 84
+  const timePts = rounds.map((x, i) => px(i).toFixed(1) + ',' + yT(x.t).toFixed(1)).join(' ')
+  const accPts = rounds.map((x, i) => px(i).toFixed(1) + ',' + yA(x.h).toFixed(1)).join(' ')
+
+  // Y-axis ticks for time (3 ticks: 0, mid, max)
+  const maxTLabel = Math.ceil(maxT / 1.15)
+  const midTLabel = Math.round(maxTLabel / 2)
+  const timeTicks = [0, midTLabel, maxTLabel]
+  // Y-axis ticks for accuracy (0, 3, 6)
+  const accTicks = [0, 3, 6]
+
+  const fmtTime = (s: number) => {
+    const m = Math.floor(s / 60)
+    return m > 0 ? `${m}:${(s - m * 60).toString().padStart(2, '0')}` : `${s}s`
+  }
 
   return (
     <div style={{ background: 'var(--surface)', borderRadius: 10, padding: 12 }}>
@@ -185,9 +199,74 @@ function Chart({ rounds }: { rounds: Round[] }) {
         <Legend color="var(--accentInk)" label={t.time} />
         <Legend color="var(--good)" label={t.accuracy} />
       </div>
-      <svg viewBox="0 0 320 110" style={{ width: '100%', height: 'auto', overflow: 'visible' }}>
+      <svg viewBox={`0 0 ${chartW} 120`} style={{ width: '100%', height: 'auto', overflow: 'visible' }}>
+        {/* Horizontal grid lines */}
+        {[0, 0.5, 1].map((f) => (
+          <line
+            key={f}
+            x1={left}
+            x2={chartW - right}
+            y1={104 - f * 84}
+            y2={104 - f * 84}
+            stroke="var(--line)"
+            strokeWidth="0.7"
+          />
+        ))}
+        {/* Y-axis labels left: time */}
+        {timeTicks.map((v) => (
+          <text
+            key={'t' + v}
+            x={left - 4}
+            y={yT(v) + 1}
+            textAnchor="end"
+            style={{ fontSize: 8.5, fill: 'var(--accentInk)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
+          >
+            {fmtTime(v)}
+          </text>
+        ))}
+        {/* Y-axis labels right: accuracy (hits/6) */}
+        {accTicks.map((v) => (
+          <text
+            key={'a' + v}
+            x={chartW - right + 4}
+            y={yA(v) + 1}
+            textAnchor="start"
+            style={{ fontSize: 8.5, fill: 'var(--good)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
+          >
+            {v}/6
+          </text>
+        ))}
+        {/* Data lines */}
         <polyline points={timePts} fill="none" stroke="var(--accentInk)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
         <polyline points={accPts} fill="none" stroke="var(--good)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        {/* Data point dots + value labels for time */}
+        {rounds.map((x, i) => (
+          <g key={'dt' + i}>
+            <circle cx={px(i)} cy={yT(x.t)} r="3" fill="var(--accentInk)" />
+            <text
+              x={px(i)}
+              y={yT(x.t) - 6}
+              textAnchor="middle"
+              style={{ fontSize: 7.5, fill: 'var(--accentInk)', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+            >
+              {fmtTime(Math.round(x.t))}
+            </text>
+          </g>
+        ))}
+        {/* Data point dots + value labels for accuracy */}
+        {rounds.map((x, i) => (
+          <g key={'da' + i}>
+            <circle cx={px(i)} cy={yA(x.h)} r="3" fill="var(--good)" />
+            <text
+              x={px(i)}
+              y={yA(x.h) + 12}
+              textAnchor="middle"
+              style={{ fontSize: 7.5, fill: 'var(--good)', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
+            >
+              {x.h}/6
+            </text>
+          </g>
+        ))}
       </svg>
     </div>
   )
