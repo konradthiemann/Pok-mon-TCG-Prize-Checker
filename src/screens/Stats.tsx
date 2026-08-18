@@ -239,34 +239,6 @@ function Chart({ rounds }: { rounds: Round[] }) {
         {/* Data lines */}
         <polyline points={timePts} fill="none" stroke="var(--accentInk)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
         <polyline points={accPts} fill="none" stroke="var(--good)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-        {/* Data point dots + value labels for time */}
-        {rounds.map((x, i) => (
-          <g key={'dt' + i}>
-            <circle cx={px(i)} cy={yT(x.t)} r="3" fill="var(--accentInk)" />
-            <text
-              x={px(i)}
-              y={yT(x.t) - 6}
-              textAnchor="middle"
-              style={{ fontSize: 7.5, fill: 'var(--accentInk)', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
-            >
-              {fmtTime(Math.round(x.t))}
-            </text>
-          </g>
-        ))}
-        {/* Data point dots + value labels for accuracy */}
-        {rounds.map((x, i) => (
-          <g key={'da' + i}>
-            <circle cx={px(i)} cy={yA(x.h)} r="3" fill="var(--good)" />
-            <text
-              x={px(i)}
-              y={yA(x.h) + 12}
-              textAnchor="middle"
-              style={{ fontSize: 7.5, fill: 'var(--good)', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}
-            >
-              {x.h}/6
-            </text>
-          </g>
-        ))}
       </svg>
     </div>
   )
