@@ -1,115 +1,107 @@
 # Prized — Technische Dokumentation
 
-Diese Datei beschreibt Architektur, Datenfluss und die wichtigsten Module von Prized.
-Für Setup und Überblick siehe die [README](../README.md).
+Architektur, Datenfluss und die wichtigsten Module. Für Setup siehe die [README](../README.md).
 
 ## Überblick
 
 Prized ist eine **rein clientseitige Single-Page-App** (Vite + React 18 + TypeScript).
-Es gibt keinen eigenen Backend-Zustand: Spiel-Logik und Daten laufen im Browser. Ein
-kleiner Express-Server liefert im Produktionsbetrieb nur die statischen Build-Artefakte
-aus. Optional lässt sich Supabase anbinden, um Accounts und Cloud-Sync zu aktivieren.
+Spiel-Logik und Daten laufen im Browser. Ein Express-Server liefert im Produktionsbetrieb
+nur die statischen Build-Artefakte aus. Optional lässt sich Supabase für Accounts und
+Cloud-Sync anbinden.
 
 ```
 Browser (React SPA)
-  ├── localStorage           ← Decks, Verlauf, Einstellungen (Gast-Modus)
-  ├── Supabase (optional)    ← Auth + Cloud-Sync von Decks/Verlauf
-  ├── pokemontcg.io API      ← Set-/Karten-Auflösung (bei Bedarf)
-  └── images.pokemontcg.io   ← Kartenbilder (CDN)
+  ├── localStorage             ← Decks, Verlauf, Einstellungen (Gast-Modus)
+  ├── Supabase (optional)      ← Auth + Cloud-Sync
+  ├── pokemontcg.io API        ← Set-/Karten-Auflösung + Basis-Status
+  ├── images.pokemontcg.io     ← Kartenbilder (primär)
+  └── limitlesstcg CDN         ← Kartenbilder (Fallback)
 
-server/index.js (Express)    ← liefert dist/ aus, SPA-Fallback, /healthz
+server/index.js (Express)      ← dist/ ausliefern, SPA-Fallback, /healthz
 ```
 
 ## Projektstruktur
 
 ```
 src/
-  App.tsx              Screen-State-Machine + globaler Zustand (Decks, Verlauf, Theme)
-  game.ts              Kern-Spiellogik: parseImport, deal, score, XP/Level, SETMAP
+  App.tsx              Screen-State-Machine + globaler Zustand
+  game.ts              Kern-Spiellogik: parseImport, deal, score, SETMAP
   storage.ts           localStorage-Persistenz (Decks + Verlauf)
   sync.ts              Supabase-Lese-/Schreib-Helfer (Cloud-Sync)
-  cardImages.ts        Laufzeit-Auflösung von Karten-Bild-Pfaden (Fallback)
-  CardFace.tsx         Kartenbild mit Namens-Fallback + Placeholder-Erkennung
-  DeckBackground.tsx   dekorativer Hintergrund
+  cardImages.ts        Karten-Bild-Auflösung + Basis-Status-Erkennung
+  CardFace.tsx         Kartenbild mit 2-stufigem Fallback
+  DeckBackground.tsx   Archetype-basierter dekorativer Hintergrund
   auth/                Supabase-Client + AuthProvider (React Context)
   components/Drawer.tsx  Seitenmenü (Theme, Account, Rechtstexte)
-  screens/             Onboarding, Home, ImportScreen, DeckBuilder, GameScreen,
-                       Reveal, Stats, Login, AccountSettings, ResetPassword,
-                       Paywall, Legal, NavBar
+  screens/             Onboarding, Home, ImportScreen, GameScreen,
+                       Reveal, Stats, Login, AccountSettings,
+                       ResetPassword, Paywall, Legal, NavBar
 server/index.js        Express-Static-Server (Produktion)
-public/                icon.svg (Logo), manifest.webmanifest, sw.js (Service Worker)
+public/                icon.svg, manifest.webmanifest, sw.js
 ```
 
 ## Screen-State-Machine (`App.tsx`)
 
 Statt eines Routers steuert ein `screen`-State das aktive Bild. Werte:
-`onboarding · home · import · builder · game · reveal · stats · login · account ·
+`onboarding · home · import · game · reveal · stats · login · account ·
 paywall · impressum · datenschutz · agb`.
 
-Globaler Zustand liegt in `App`: `decks`, `history`, `game`, `result`, `theme`,
-`premium`. Beim Login-Wechsel werden Daten aus der Cloud geladen bzw. (bei erster
-Anmeldung) die lokalen Daten migriert.
+Globaler Zustand in `App`: `decks`, `history`, `game`, `result`, `theme`, `premium`.
 
 ## Spiel-Logik (`game.ts`)
 
-- **`parseImport(text)`** – parst eine Deckliste (`4 Dragapult ex TWM 130`) in
-  `CardInput[]` inkl. Zähl-Summen und Zeilen-Fehlern. Baut den Bild-Pfad `api`
-  deterministisch aus `SETMAP` (`<setId>/<nummer>`), sonst `null`.
-- **`cardsOf(cards)`** – expandiert Mengen zu Einzelkarten und ergänzt `img` + `key`.
-- **`deal(deck)`** – zieht zufällig 6 Preiskarten + Starthand, erzeugt den `GameState`.
-- **`score(state)`** – wertet Treffer (`hits` 0–6) und Zeit aus.
-- **Gamification** – `earnXp = hits*120 + max(0, 45 - t)*4`, `XP_PER_LEVEL = 600`,
-  dazu `starsFor`, `rankFor`, `dayStreak`, `progressOf(history)`.
-- **`SETMAP`** – Set-Kürzel → pokemontcg.io-Set-ID (z. B. `TWM → sv6`, `CRI → me4`,
-  `MEE → sve`). Erweitern, sobald neue Sets erscheinen.
+- **`parseImport(text)`** — parst Decklisten (`4 Dragapult ex TWM 130`) in `CardInput[]`.
+  Bild-Pfad `api` wird deterministisch aus `SETMAP` gebaut, sonst `null`.
+- **`cardsOf(cards)`** — ergänzt `img` (pokemontcg.io), `fallbackImg` (limitlesstcg CDN)
+  und `key`.
+- **`deal(deck)`** — mischt, zieht Preiskarten + Starthand. Aktives Pokémon muss ein
+  Basis-Pokémon sein (3-stufig: bestätigte Basics → Heuristik → Fallback).
+- **`score(state)`** — wertet Treffer (0–6) und Zeit aus.
+- **`starCard(deck)`** — Archetype-Erkennung: Mega ex > ex > Pokémon, nach Kopienanzahl.
+  `Deck.archetype` als manueller Override.
+- **`SETMAP`** — Set-Kürzel → pokemontcg.io-Set-ID. Erweitern bei neuen Sets.
 
-## Kartenbilder: Auflösung & Fallback
+## Kartenbilder: 2-stufiger Fallback
 
-Bilder kommen von `https://images.pokemontcg.io/<setId>/<nummer>.png`. Die
-pokemontcg.io-API ist zeitweise instabil, daher die mehrstufige, defensive Strategie:
+1. **pokemontcg.io** (primär) — `images.pokemontcg.io/<setId>/<nummer>.png`. Set-ID
+   über `SETMAP` oder Laufzeit-Auflösung via `/sets`-Endpoint.
+2. **limitlesstcg CDN** (Fallback) — `limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpci/{SET}/{SET}_{NUM}_R_EN_LG.png`.
+   Wird automatisch probiert wenn pokemontcg.io kein Bild hat oder den 640×892-Kartenrücken liefert.
+3. **Namens-Platzhalter** — blauer Slot mit Kartenname, wenn beide Quellen fehlschlagen.
 
-1. **`SETMAP` (deterministisch, offline):** Ist das Set-Kürzel bekannt, wird der
-   Bild-Pfad ohne API-Abfrage gebaut. Das ist der Normalfall.
-2. **`cardImages.ts` (`resolveCardApi`)** – Fallback für unbekannte Kürzel: löst die
-   Set-ID über den `/sets`-Endpoint auf (gecacht in `localStorage`), sonst über
-   Name + Nummer über `/cards`. Transiente Netzwerkfehler werden mit Backoff
-   wiederholt und **nicht** negativ gecacht.
-3. **`CardFace.tsx`** – zeigt das Bild; bei fehlendem/kaputtem Bild **oder** wenn die
-   CDN nur den generischen 640×892-Karten-Rücken liefert (Scan noch nicht
-   veröffentlicht), wird auf den **Karten-Namen** zurückgefallen. Echte Vorderseiten
-   sind 245×342. Erscheint später der echte Scan, zeigt die App ihn automatisch.
+`cardImages.ts` löst zusätzlich den **Basis-Status** auf: für jedes Pokémon wird via
+`/cards/{id}?select=subtypes` geprüft ob es ein Basic ist (`b: 1|0`). Gecacht in localStorage.
 
-> Grundsatz: Ein Deck bleibt **immer spielbar** – notfalls mit Namen statt Bild.
+## Raise-Guard (Anti-Cheat)
+
+Im Deck-Fächer können Karten angehoben werden um sie zu zählen. Zum Schutz vor
+Deck-Durchleuchtung:
+- **Typ-Lock**: Erste angehobene Karte bestimmt den erlaubten Typ (P/T/E).
+- **Count-only**: Shelf zeigt nur die Anzahl, nicht das Verhältnis.
+- **Visueller Hinweis**: Clock-Ring färbt sich von grün über blau zu warm-rot.
+
+## Deck-Hintergrund (`DeckBackground.tsx`)
+
+Archetype-basiert: `starCard()` bestimmt das Haupt-Pokémon, `speciesOf()` leitet den
+PokeAPI-Speziesnamen ab (behandelt "Mega X ex" → "x"). Sprite-Quellen:
+1. PokeAPI (96×96 Pixel-Sprite + Pokédex-Farbe für Gradient)
+2. limitlesstcg (`r2.limitlesstcg.net/pokemon/gen9/{species}.png`, 41×34)
+3. Nur Farbverlauf (aus `hueOf(deckName)`)
 
 ## Persistenz & Sync
 
-- **Gast-Modus:** `storage.ts` liest/schreibt Decks und Verlauf in `localStorage`.
-- **Angemeldet:** `sync.ts` spiegelt Decks (`cloudUpsertDeck`, `cloudLoadDecks`) und
-  Runden (`cloudInsertRound`, `cloudLoadHistory`) nach Supabase. `AuthProvider`
-  (React Context) hält Session/User; `hasSupabase` schaltet Auth nur bei gesetzten
-  Keys frei.
-
-## Freemium-Gating
-
-Demo-Decks sind frei spielbar (`isDeckFree`). Eigene Decks sind ohne Premium
-(`localStorage: pc_premium_v1`) hinter der `Paywall` gesperrt. Zahlungsanbindung folgt.
-
-## Rechtstexte (`screens/Legal.tsx`)
-
-Impressum, Datenschutz und Nutzungsbedingungen sind ein einzelner Screen, gesteuert
-über `doc: 'impressum' | 'datenschutz' | 'agb'`, erreichbar aus dem `Drawer`-Menü.
-Die Kontakt-/Anschriftsdaten stehen zentral in der `OPERATOR`-Konstante.
+- **Gast-Modus:** `storage.ts` — Decks und Verlauf in `localStorage`.
+- **Angemeldet:** `sync.ts` — Decks und Runden nach Supabase gespiegelt.
 
 ## Server & Deployment
 
-- **`server/index.js`** – Express: `express.static(dist)`, SPA-Fallback auf
-  `index.html`, Health-Check unter `/healthz`. Port via `PORT` (Default 8080).
-- **`railway.json`** – NIXPACKS-Builder, `healthcheckPath: /healthz`.
-- **Railway** – Auto-Deploy bei Push auf `main`. Custom-Domain
-  `prized.konradthiemann.de` (CNAME auf die Railway-App).
+- **`server/index.js`** — Express: static, SPA-Fallback, `/healthz`. Port via `PORT`.
+- **`railway.json`** — NIXPACKS-Builder, `healthcheckPath: /healthz`.
+- **Railway** — Auto-Deploy bei Push auf `main`.
 
 ## Konventionen
 
 - UI-Texte sind **deutsch**.
-- Karten **überlappen** im Design (Fächer/Stapel) – nicht durch ein Grid ersetzen.
-- Kommentare erklären das *Warum*, nicht das *Was*.
+- Karten **überlappen** im Design (Fächer) — nicht durch Grid ersetzen.
+- SVG-Icons statt Emoji. Flat Colors statt Gradients. Minimale Shadows.
+- Border-radius: 8/10/12. Font-Größen: 12/14/16/20. Weights: 400/600/700.

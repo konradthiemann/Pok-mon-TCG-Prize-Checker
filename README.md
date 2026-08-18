@@ -1,10 +1,17 @@
 <div align="center">
-  <img src="public/icon.svg" width="96" height="96" alt="Prized Logo" />
+  <img src="public/icon.svg" width="80" height="80" alt="Prized Logo" />
   <h1>Prized</h1>
   <p><strong>Trainiere dein Preis-Gespür im Sammelkartenspiel.</strong></p>
   <p>
-    <a href="https://prized.konradthiemann.de">🔗 Live-App</a> ·
-    <a href="docs/ARCHITECTURE.md">🛠 Technische Doku</a>
+    <a href="https://prized.konradthiemann.de">Live-App</a> ·
+    <a href="docs/ARCHITECTURE.md">Architektur</a>
+  </p>
+  <p>
+    <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff" />
+    <img alt="React" src="https://img.shields.io/badge/React_18-61DAFB?logo=react&logoColor=000" />
+    <img alt="Vite" src="https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=fff" />
+    <img alt="Supabase" src="https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=fff" />
+    <img alt="Railway" src="https://img.shields.io/badge/Railway-0B0D0E?logo=railway&logoColor=fff" />
   </p>
 </div>
 
@@ -14,31 +21,19 @@
 
 Zu Beginn jeder Partie im Sammelkartenspiel werden **6 der 60 Karten** verdeckt als
 Preiskarten beiseitegelegt. Wer weiß, welche Karten das sind, hat einen echten
-kompetitiven Vorteil – man leitet es per **Ausschlussprinzip** aus Hand und Deck ab.
+kompetitiven Vorteil — man leitet es per **Ausschlussprinzip** aus Hand und Deck ab.
 
-**Prized** ist ein kleines, schnelles Trainings-Minispiel genau dafür: Deck wählen,
-durchblättern, die 6 Preiskarten erraten – und mit XP, Leveln, Rängen und Streaks
-besser werden.
+**Prized** ist ein schnelles Trainings-Minispiel genau dafür: Deck wählen,
+durchblättern, die 6 Preiskarten erraten.
 
 ## Features
 
-- 🎴 **Eigene Decks** per Decklisten-Import oder Deck-Builder (Regel: genau 60 Karten).
-- 🃏 **Kartenbilder** von pokemontcg.io mit robustem Namens-Fallback, falls kein Bild
-  verfügbar ist (die App bleibt immer spielbar).
-- 🧠 **Ausschluss-Training**: aufgefächerter Deck-Browser, Preiskarten tippen, auflösen.
-- 📈 **Gamification**: XP, Level, Ränge, Tages-Streak, Genauigkeits-Statistik.
-- ☁️ **Optionaler Account** (Supabase) für geräteübergreifende Cloud-Sync – ohne Account
-  läuft alles lokal im Browser.
-- 🌗 **Dark/Light Mode**, PWA-fähig (installierbar, Offline-Shell).
-
-## Rechtliches
-
-Impressum, Datenschutz und Nutzungsbedingungen sind **in der App** über das Menü (☰)
-erreichbar. Sie liegen als Screen in [`src/screens/Legal.tsx`](src/screens/Legal.tsx).
-
-> ⚠️ **Vor dem Live-Gang:** Im Impressum die Anschrift in
-> [`src/screens/Legal.tsx`](src/screens/Legal.tsx) (`OPERATOR`) vervollständigen –
-> die Adresse ist eine Pflichtangabe nach § 5 DDG.
+- **Deck-Import** — Deckliste im Standard-TCG-Format einfügen, sofort spielen.
+- **Kartenbilder** von pokemontcg.io mit limitlesstcg-Fallback — die App zeigt immer ein Bild.
+- **Deck-Fächer** — horizontaler Kartenfächer mit Drag, Scrub und Tap-to-raise.
+- **Statistik** — Zeit, Genauigkeit und Verlauf pro Deck.
+- **Optionaler Account** (Supabase) für geräteübergreifende Cloud-Sync.
+- **Dark/Light Mode**, PWA-fähig.
 
 ## Schnellstart
 
@@ -46,7 +41,7 @@ erreichbar. Sie liegen als Screen in [`src/screens/Legal.tsx`](src/screens/Legal
 npm install
 npm run dev        # Vite Dev-Server (http://localhost:5173)
 npm run build      # Produktions-Build nach dist/
-npm start          # dist/ über den Express-Server ausliefern (Port via PORT, Default 8080)
+npm start          # Express-Server (Port via PORT, Default 8080)
 ```
 
 ### Umgebungsvariablen (optional)
@@ -62,18 +57,26 @@ Ohne diese Variablen läuft Prized im lokalen Gast-Modus.
 
 ## Tech-Stack
 
-- **Frontend:** Vite + React 18 + TypeScript (rein clientseitig)
-- **Persistenz:** `localStorage`, optional Supabase (Auth + Cloud-Sync)
-- **Kartendaten:** [pokemontcg.io](https://pokemontcg.io) API + Bild-CDN
-- **Server:** kleiner Express-Static-Server (`server/index.js`), SPA-Fallback, `/healthz`
-- **Hosting:** [Railway](https://railway.app) (Auto-Deploy bei Push auf `main`)
+| Schicht      | Technologie |
+| ------------ | ----------- |
+| Frontend     | React 18 + TypeScript + Vite |
+| Persistenz   | localStorage, optional Supabase (Auth + Cloud-Sync) |
+| Kartendaten  | [pokemontcg.io](https://pokemontcg.io) API + [limitlesstcg](https://limitlesstcg.com) CDN |
+| Server       | Express (`server/index.js`), SPA-Fallback, `/healthz` |
+| Hosting      | [Railway](https://railway.app) — Auto-Deploy bei Push auf `main` |
 
-Details, Datenmodell und Architektur: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+Architektur und Datenmodell: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
 
 ## Deployment
 
-Push auf `main` löst automatisch ein Railway-Deploy aus. Live-Domain:
-`prized.konradthiemann.de` (CNAME auf die Railway-App).
+Push auf `main` löst automatisch ein Railway-Deploy aus.
+
+## Rechtliches
+
+Impressum, Datenschutz und AGB sind **in der App** über das Menü erreichbar
+([`src/screens/Legal.tsx`](src/screens/Legal.tsx)).
+
+> **Vor dem Live-Gang:** Anschrift im Impressum vervollständigen (`OPERATOR` in Legal.tsx).
 
 ## Disclaimer
 

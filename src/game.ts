@@ -71,11 +71,11 @@ export const ONBOARDING = [
   },
   {
     t: 'Blättern & Auswählen',
-    b: 'Wische durch Hand und Deck und markiere dann die 6 Karten, die du in den Preisen vermutest. Die Uhr läuft.',
+    b: 'Wische durch den Kartenfächer und tippe Karten an, um sie anzuheben und zu zählen. Wähle dann in der Deckliste die 6 Karten, die du in den Preisen vermutest.',
   },
   {
-    t: 'Fortschritt verfolgen',
-    b: 'Zeit und Genauigkeit werden für jede Runde festgehalten. Beobachte, wie du Deck für Deck schneller und schärfer wirst.',
+    t: 'Dein Deck, dein Tempo',
+    b: 'Importiere deine eigene Deckliste und trainiere damit. Zeit und Genauigkeit werden festgehalten, damit du deinen Fortschritt verfolgen kannst.',
   },
 ]
 
