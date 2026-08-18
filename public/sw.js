@@ -1,11 +1,25 @@
 // Prized Service Worker — App-Shell offline, Kartenbilder mit Cache.
-const VERSION = 'v1'
+const VERSION = 'v2'
 const SHELL = `pc-shell-${VERSION}`
 const IMG = `pc-img-${VERSION}`
-const SHELL_ASSETS = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg']
+
+// Minimal-Shell: index.html + Icon + Fonts. JS/CSS werden per stale-while-revalidate gecacht.
+const SHELL_ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.webmanifest',
+  '/icon.svg',
+  '/icons/icon-192.png',
+  '/fonts/sora-latin.woff2',
+]
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(SHELL).then((c) => c.addAll(SHELL_ASSETS)).then(() => self.skipWaiting()))
+  e.waitUntil(
+    caches
+      .open(SHELL)
+      .then((c) => c.addAll(SHELL_ASSETS))
+      .then(() => self.skipWaiting()),
+  )
 })
 
 self.addEventListener('activate', (e) => {
@@ -25,36 +39,51 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(request.url)
 
   // Pokémon-Kartenbilder: cache-first, dann Netzwerk. Max 200 Einträge.
-  if (url.hostname === 'images.pokemontcg.io') {
+  if (
+    url.hostname === 'images.pokemontcg.io' ||
+    url.hostname === 'limitlesstcg.nyc3.cdn.digitaloceanspaces.com'
+  ) {
     e.respondWith(
       caches.open(IMG).then(async (cache) => {
         const hit = await cache.match(request)
         if (hit) return hit
-        const res = await fetch(request)
-        if (res.ok) {
-          cache.put(request, res.clone())
-          // Evict älteste Einträge wenn Cache > 200
-          cache.keys().then((keys) => {
-            if (keys.length > 200) {
-              keys.slice(0, keys.length - 200).forEach((k) => cache.delete(k))
-            }
-          })
+        try {
+          const res = await fetch(request)
+          if (res.ok) {
+            cache.put(request, res.clone())
+            cache.keys().then((keys) => {
+              if (keys.length > 200) {
+                keys.slice(0, keys.length - 200).forEach((k) => cache.delete(k))
+              }
+            })
+          }
+          return res
+        } catch {
+          return new Response('', { status: 408 })
         }
-        return res
       }),
     )
     return
   }
 
-  // Navigation / App-Shell: network-first mit Fallback auf Cache (SPA).
+  // Navigation: network-first, Fallback auf gecachte index.html.
   if (request.mode === 'navigate') {
     e.respondWith(
-      fetch(request).catch(() => caches.match('/index.html').then((r) => r || Response.error())),
+      fetch(request)
+        .then((res) => {
+          // Erfolgreiche Navigation cachen (frische index.html).
+          if (res.ok) {
+            const clone = res.clone()
+            caches.open(SHELL).then((c) => c.put('/index.html', clone))
+          }
+          return res
+        })
+        .catch(() => caches.match('/index.html').then((r) => r || offlineResponse())),
     )
     return
   }
 
-  // Sonstige gleiche Origin: stale-while-revalidate.
+  // Gleiche Origin (JS, CSS, Fonts): stale-while-revalidate.
   if (url.origin === self.location.origin) {
     e.respondWith(
       caches.open(SHELL).then(async (cache) => {
@@ -70,3 +99,15 @@ self.addEventListener('fetch', (e) => {
     )
   }
 })
+
+function offlineResponse() {
+  return new Response(
+    '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Prized — Offline</title></head>' +
+      '<body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f1faf2;color:#0e2a32;text-align:center">' +
+      '<div><h1 style="font-size:20px;margin:0 0 8px">Du bist offline</h1>' +
+      '<p style="font-size:14px;color:#64837b;margin:0 0 16px">Prized braucht eine Internetverbindung. Bitte verbinde dich und versuche es erneut.</p>' +
+      '<button onclick="location.reload()" style="padding:12px 24px;border:none;border-radius:12px;background:#4fc3f7;color:#06323f;font-weight:600;font-size:14px;cursor:pointer">Erneut versuchen</button>' +
+      '</div></body></html>',
+    { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
+  )
+}
