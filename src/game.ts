@@ -222,12 +222,11 @@ export function deal(deck: Deck): GameState {
     ;[inst[i], inst[j]] = [inst[j], inst[i]]
   }
   const basicCache = loadBasicCache()
-  // 1. Bestätigte Basis-Pokémon (b-Flag ODER Cache)
-  let cand = inst
-    .map((c, i) => (c.t === 'P' && isBasic(c, basicCache) === true ? i : -1))
-    .filter((i) => i >= 0)
+  // 1. Persistierte Basis-Pokémon (b === 1, gesetzt nach API-Auflösung + Speichern)
+  let cand = inst.map((c, i) => (c.b === 1 ? i : -1)).filter((i) => i >= 0)
   if (!cand.length) {
-    // 2. Pokémon die NICHT bestätigt Nicht-Basis sind, höchste Kopienanzahl
+    // 2. Pokémon die NICHT als Nicht-Basis bestätigt sind (via b-Flag, Cache oder Mega-Heuristik).
+    //    Unter den verbleibenden → höchste Kopienanzahl bevorzugen.
     const pokemon = inst
       .map((c, i) =>
         c.t === 'P' && isBasic(c, basicCache) !== false
