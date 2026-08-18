@@ -55,7 +55,8 @@ Globaler Zustand in `App`: `decks`, `history`, `game`, `result`, `theme`, `premi
 - **`cardsOf(cards)`** — ergänzt `img` (pokemontcg.io), `fallbackImg` (limitlesstcg CDN)
   und `key`.
 - **`deal(deck)`** — mischt, zieht Preiskarten + Starthand. Aktives Pokémon muss ein
-  Basis-Pokémon sein (3-stufig: bestätigte Basics → Heuristik → Fallback).
+  Basis-Pokémon sein (3-stufig: persistiertes `b=1` → Cache-Ausschluss + Qty-Heuristik → Fallback).
+- **`deckToText(deck)`** — konvertiert Cards zurück ins Import-Format (für Deck-Bearbeitung).
 - **`score(state)`** — wertet Treffer (0–6) und Zeit aus.
 - **`starCard(deck)`** — Archetype-Erkennung: Mega ex > ex > Pokémon, nach Kopienanzahl.
   `Deck.archetype` als manueller Override.
@@ -70,7 +71,9 @@ Globaler Zustand in `App`: `decks`, `history`, `game`, `result`, `theme`, `premi
 3. **Namens-Platzhalter** — blauer Slot mit Kartenname, wenn beide Quellen fehlschlagen.
 
 `cardImages.ts` löst zusätzlich den **Basis-Status** auf: für jedes Pokémon wird via
-`/cards/{id}?select=subtypes` geprüft ob es ein Basic ist (`b: 1|0`). Gecacht in localStorage.
+`/cards/{id}?select=subtypes` geprüft ob es ein Basic ist (`b: 1|0`). Gecacht in localStorage
+(`pc_basic_v1`). Der Resolution-Effect in `App.tsx` triggert auch wenn alle Bilder vorhanden
+sind aber Pokémon noch `b=undefined` haben — sonst würde Phase 2 nie laufen.
 
 ## Raise-Guard (Anti-Cheat)
 
