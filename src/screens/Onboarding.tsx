@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ONBOARDING } from '../game'
+import { useT } from '../i18n'
 
 interface Props {
   onDone: () => void
@@ -7,9 +7,10 @@ interface Props {
 }
 
 export function Onboarding({ onDone, onSkip }: Props) {
+  const t = useT()
   const [i, setI] = useState(0)
-  const step = ONBOARDING[i]
-  const last = i === ONBOARDING.length - 1
+  const step = t.onboarding[i]
+  const last = i === t.onboarding.length - 1
   const next = () => (last ? onDone() : setI(i + 1))
 
   return (
@@ -24,7 +25,7 @@ export function Onboarding({ onDone, onSkip }: Props) {
     >
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <button className="btn btn-ghost" onClick={onSkip} style={{ padding: '8px 12px' }}>
-          Überspringen
+          {t.skip}
         </button>
       </div>
 
@@ -67,7 +68,7 @@ export function Onboarding({ onDone, onSkip }: Props) {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 22 }}>
-        {ONBOARDING.map((_, k) => (
+        {t.onboarding.map((_, k) => (
           <span
             key={k}
             style={{
@@ -82,7 +83,7 @@ export function Onboarding({ onDone, onSkip }: Props) {
       </div>
 
       <button className="btn btn-primary" onClick={next} style={{ padding: '15px', fontSize: 16 }}>
-        {last ? "Los geht's" : 'Weiter'}
+        {last ? t.letsGo : t.next}
       </button>
     </div>
   )

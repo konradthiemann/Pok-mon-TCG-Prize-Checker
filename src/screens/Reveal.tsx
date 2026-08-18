@@ -1,5 +1,6 @@
 import { type Result, fmt } from '../game'
 import { CardFace } from '../CardFace'
+import { useT } from '../i18n'
 
 interface Props {
   result: Result
@@ -8,19 +9,19 @@ interface Props {
   onStats: () => void
 }
 
-const META = {
-  hit: { color: 'var(--good)', label: 'Treffer' },
-  part: { color: 'var(--warn)', label: 'Teilweise' },
-  miss: { color: 'var(--bad)', label: 'Falsch' },
-  missed: { color: 'var(--warn)', label: 'Verpasst' },
-} as const
-
 export function Reveal({ result, onPlayAgain, onHome, onStats }: Props) {
+  const t = useT()
+  const META = {
+    hit: { color: 'var(--good)', label: t.hit },
+    part: { color: 'var(--warn)', label: t.partial },
+    miss: { color: 'var(--bad)', label: t.wrong },
+    missed: { color: 'var(--warn)', label: t.missed },
+  } as const
   const acc = Math.round((result.hits / 6) * 100) + '%'
   const hitsColor =
     result.hits >= 5 ? 'var(--good)' : result.hits >= 3 ? 'var(--warn)' : 'var(--bad)'
   const headline =
-    result.hits === 6 ? 'Perfekte Lesung' : result.hits >= 4 ? 'Starke Lesung' : 'Weiter trainieren'
+    result.hits === 6 ? t.perfectRead : result.hits >= 4 ? t.strongRead : t.keepPracticing
 
   return (
     <div
@@ -48,9 +49,9 @@ export function Reveal({ result, onPlayAgain, onHome, onStats }: Props) {
         </p>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-          <Metric value={fmt(result.time)} label="Zeit" />
-          <Metric value={`${result.hits}/6`} label="Treffer" color={hitsColor} />
-          <Metric value={acc} label="Genauigkeit" />
+          <Metric value={fmt(result.time)} label={t.time} />
+          <Metric value={`${result.hits}/6`} label={t.hits} color={hitsColor} />
+          <Metric value={acc} label={t.accuracy} />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -95,7 +96,7 @@ export function Reveal({ result, onPlayAgain, onHome, onStats }: Props) {
                     {r.name}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--sub)' }}>
-                    Gewählt {r.picked} · in Preisen {r.actual}
+                    {t.picked} {r.picked} · {t.inPrizes} {r.actual}
                   </div>
                 </div>
                 <span
@@ -127,13 +128,13 @@ export function Reveal({ result, onPlayAgain, onHome, onStats }: Props) {
         }}
       >
         <button className="btn btn-primary" onClick={onPlayAgain} style={{ flex: 1, padding: 14 }}>
-          Nochmal
+          {t.playAgain}
         </button>
         <button className="btn btn-ghost" onClick={onHome} style={{ padding: 14, color: 'var(--accentInk)' }}>
-          Decks
+          {t.decks}
         </button>
         <button className="btn btn-ghost" onClick={onStats} style={{ padding: 14, color: 'var(--accentInk)' }}>
-          Statistik
+          {t.stats}
         </button>
       </div>
     </div>

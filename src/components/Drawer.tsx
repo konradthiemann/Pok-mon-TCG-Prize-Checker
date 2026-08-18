@@ -1,4 +1,6 @@
 import { useAuth } from '../auth/AuthProvider'
+import { useI18n } from '../i18n'
+import type { Lang } from '../i18n'
 
 interface Props {
   open: boolean
@@ -12,6 +14,8 @@ interface Props {
 
 export function Drawer({ open, theme, onClose, onToggleTheme, onLogin, onAccount, onLegal }: Props) {
   const { user, configured, signOut } = useAuth()
+  const { lang, setLang, t } = useI18n()
+  const LANGS: { id: Lang; label: string }[] = [{ id: 'de', label: 'Deutsch' }, { id: 'en', label: 'English' }]
 
   const row = (icon: string, label: string, onClick: () => void, danger = false) => (
     <button
@@ -74,11 +78,11 @@ export function Drawer({ open, theme, onClose, onToggleTheme, onLogin, onAccount
             padding: '18px 16px 10px',
           }}
         >
-          <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)' }}>Menü</span>
+          <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)' }}>{t.menu}</span>
           <button
             className="btn btn-ghost"
             onClick={onClose}
-            aria-label="Schließen"
+            aria-label={t.close}
             style={{ fontSize: 22, padding: '4px 10px', color: 'var(--sub)' }}
           >
             ✕
@@ -95,7 +99,7 @@ export function Drawer({ open, theme, onClose, onToggleTheme, onLogin, onAccount
         >
           {user ? (
             <>
-              <div style={{ fontSize: 12, color: 'var(--sub)' }}>Angemeldet als</div>
+              <div style={{ fontSize: 12, color: 'var(--sub)' }}>{t.loggedInAs}</div>
               <div
                 style={{
                   fontSize: 15,
@@ -111,16 +115,16 @@ export function Drawer({ open, theme, onClose, onToggleTheme, onLogin, onAccount
             </>
           ) : (
             <div style={{ fontSize: 13.5, color: 'var(--accentInk)', fontWeight: 600 }}>
-              {configured ? 'Nicht angemeldet – als Gast unterwegs.' : 'Gast-Modus (kein Konto konfiguriert).'}
+              {configured ? t.guestNotLoggedIn : t.guestNoAccount}
             </div>
           )}
         </div>
 
         <nav style={{ padding: '0 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {user && row('⚙️', 'Kontoeinstellungen', () => { onClose(); onAccount() })}
-          {!user && configured && row('🔑', 'Anmelden', () => { onClose(); onLogin() })}
-          {row(theme === 'dark' ? '☀️' : '🌙', theme === 'dark' ? 'Light Mode' : 'Dark Mode', onToggleTheme)}
-          {user && row('🚪', 'Abmelden', async () => { onClose(); await signOut() }, true)}
+          {user && row('⚙️', t.accountSettings, () => { onClose(); onAccount() })}
+          {!user && configured && row('🔑', t.signIn, () => { onClose(); onLogin() })}
+          {row(theme === 'dark' ? '☀️' : '🌙', theme === 'dark' ? t.lightMode : t.darkMode, onToggleTheme)}
+          {user && row('🚪', t.signOut, async () => { onClose(); await signOut() }, true)}
         </nav>
 
         <div
@@ -133,13 +137,34 @@ export function Drawer({ open, theme, onClose, onToggleTheme, onLogin, onAccount
             gap: 2,
           }}
         >
-          {row('📄', 'Impressum', () => onLegal('impressum'))}
-          {row('🔒', 'Datenschutz', () => onLegal('datenschutz'))}
-          {row('📜', 'Nutzungsbedingungen', () => onLegal('agb'))}
+          {row('📄', t.impressum, () => onLegal('impressum'))}
+          {row('🔒', t.datenschutz, () => onLegal('datenschutz'))}
+          {row('📜', t.nutzungsbedingungen, () => onLegal('agb'))}
+
+          <div style={{ display: 'flex', gap: 6, padding: '10px 16px 4px' }}>
+            {LANGS.map((l) => (
+              <button
+                key={l.id}
+                onClick={() => setLang(l.id)}
+                style={{
+                  flex: 1,
+                  padding: '8px 0',
+                  borderRadius: 10,
+                  border: lang === l.id ? '2px solid var(--accentInk)' : '1px solid var(--line)',
+                  background: lang === l.id ? 'var(--accentSoft)' : 'var(--surface)',
+                  color: lang === l.id ? 'var(--accentInk)' : 'var(--sub)',
+                  fontWeight: 700,
+                  fontSize: 13,
+                }}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div style={{ padding: '10px 20px 16px', color: 'var(--sub)', fontSize: 11 }}>
-          Prized · inoffizielles Fan-Projekt
+          {t.footerNote}
         </div>
       </aside>
     </>

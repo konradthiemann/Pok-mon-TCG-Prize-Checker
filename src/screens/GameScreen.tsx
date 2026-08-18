@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { type GameState } from '../game'
 import { CardFace } from '../CardFace'
 import { DeckBackground } from '../DeckBackground'
+import { useT } from '../i18n'
 
 interface Props {
   game: GameState
@@ -14,6 +15,7 @@ interface Props {
 const LIMIT = 45
 
 export function GameScreen({ game, dark, onChange, onQuit, onConfirm }: Props) {
+  const t = useT()
   const [tab, setTab] = useState<'table' | 'list'>('table')
   const [, force] = useState(0)
   // Fan-Position (Bruchzahl über game.rest) & angehobene Karten leben lokal,
@@ -65,7 +67,7 @@ export function GameScreen({ game, dark, onChange, onQuit, onConfirm }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px 4px' }}>
         <button
           onClick={onQuit}
-          aria-label="Beenden"
+          aria-label={t.quit}
           style={{
             width: 34,
             height: 34,
@@ -117,10 +119,10 @@ export function GameScreen({ game, dark, onChange, onQuit, onConfirm }: Props) {
         }}
       >
         <TabBtn active={tab === 'table'} onClick={() => setTab('table')}>
-          Tisch
+          {t.table}
         </TabBtn>
         <TabBtn active={tab === 'list'} onClick={() => setTab('list')}>
-          Deckliste · {selTotal}/6
+          {t.decklist} · {selTotal}/6
         </TabBtn>
       </div>
       </div>
@@ -186,7 +188,8 @@ function TableTab({
     }
     return null
   })()
-  const raisedLabel = raisedCount > 0 ? `${raisedCount} angehoben · ` : ''
+  const t = useT()
+  const raisedLabel = raisedCount > 0 ? `${raisedCount} ${t.raised} · ` : ''
 
   const fdrag = useRef<{ x: number; pos: number } | null>(null)
   const fanMoved = useRef(false)
@@ -278,8 +281,8 @@ function TableTab({
       {/* Aktiv + Hand */}
       <div style={{ flex: 'none' }}>
         <div style={{ display: 'flex', gap: 16, margin: '0 4px 6px' }}>
-          <Label color="var(--accentInk)">Aktiv</Label>
-          <Label color="var(--sub)">Hand · {game.hand.length}</Label>
+          <Label color="var(--accentInk)">{t.active}</Label>
+          <Label color="var(--sub)">{t.hand} · {game.hand.length}</Label>
         </div>
         <div style={{ display: 'flex', gap: 5, alignItems: 'flex-end' }}>
           <div
@@ -309,7 +312,7 @@ function TableTab({
                 padding: '1.5px 0',
               }}
             >
-              AKTIV
+              {t.activeLabel}
             </span>
           </div>
           <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--line)', margin: '2px 3px' }} />
@@ -334,7 +337,7 @@ function TableTab({
       {/* Deck-Fächer + Scrubber */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4, minHeight: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', margin: '0 4px' }}>
-          <Label color="var(--sub)">Deck</Label>
+          <Label color="var(--sub)">{t.deck}</Label>
           <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--sub)', fontVariantNumeric: 'tabular-nums' }}>
             {raisedLabel}
             {deckIdx1} / {N}
@@ -478,6 +481,7 @@ function ListTab({
   onChange: (g: GameState) => void
   onConfirm: () => void
 }) {
+  const t = useT()
   const toggle = (key: string, qty: number) => {
     const sel = { ...game.sel }
     const cur = sel[key] || 0
@@ -577,7 +581,7 @@ function ListTab({
             opacity: canConfirm ? 1 : 0.4,
           }}
         >
-          Bestätigen
+          {t.confirm}
         </button>
       </div>
     </div>

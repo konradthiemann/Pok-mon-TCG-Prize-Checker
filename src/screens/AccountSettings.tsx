@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from 'react'
 import { useAuth } from '../auth/AuthProvider'
+import { useT } from '../i18n'
 
 interface Props {
   onBack: () => void
@@ -17,6 +18,7 @@ const inputStyle: CSSProperties = {
 }
 
 export function AccountSettings({ onBack }: Props) {
+  const t = useT()
   const { user, updatePassword, signOut } = useAuth()
   const [pw1, setPw1] = useState('')
   const [pw2, setPw2] = useState('')
@@ -29,11 +31,11 @@ export function AccountSettings({ onBack }: Props) {
     setError(null)
     setInfo(null)
     if (pw1.length < 8) {
-      setError('Passwort muss mindestens 8 Zeichen haben.')
+      setError(t.pwMin8Error)
       return
     }
     if (pw1 !== pw2) {
-      setError('Passwörter stimmen nicht überein.')
+      setError(t.pwMismatchError)
       return
     }
     setLoading(true)
@@ -43,7 +45,7 @@ export function AccountSettings({ onBack }: Props) {
       setError(res.error)
       return
     }
-    setInfo(res.info ?? 'Passwort aktualisiert.')
+    setInfo(res.info ?? t.passwordUpdated)
     setPw1('')
     setPw2('')
   }
@@ -55,38 +57,38 @@ export function AccountSettings({ onBack }: Props) {
           className="btn btn-ghost"
           onClick={onBack}
           style={{ fontSize: 22, padding: '4px 10px', color: 'var(--ink)' }}
-          aria-label="Zurück"
+          aria-label={t.back}
         >
           ‹
         </button>
         <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: 'var(--ink)' }}>
-          Kontoeinstellungen
+          {t.accountSettings}
         </h1>
       </header>
 
       <div className="pc-scroll" style={{ padding: '10px 20px 24px' }}>
         <div style={{ background: 'var(--surface)', borderRadius: 16, padding: 16, marginBottom: 18, boxShadow: 'var(--shadow)' }}>
-          <div style={{ fontSize: 12, color: 'var(--sub)' }}>E-Mail</div>
+          <div style={{ fontSize: 12, color: 'var(--sub)' }}>{t.email}</div>
           <div style={{ fontSize: 15.5, fontWeight: 700, color: 'var(--ink)', wordBreak: 'break-all' }}>
             {user?.email ?? '—'}
           </div>
           {user?.name && (
             <>
-              <div style={{ fontSize: 12, color: 'var(--sub)', marginTop: 10 }}>Name</div>
+              <div style={{ fontSize: 12, color: 'var(--sub)', marginTop: 10 }}>{t.name}</div>
               <div style={{ fontSize: 15.5, fontWeight: 700, color: 'var(--ink)' }}>{user.name}</div>
             </>
           )}
         </div>
 
         <p style={{ margin: '0 0 10px', fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: 'var(--sub)' }}>
-          Passwort ändern
+          {t.changePassword}
         </p>
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <input
             type="password"
             value={pw1}
             onChange={(e) => setPw1(e.target.value)}
-            placeholder="Neues Passwort"
+            placeholder={t.newPassword}
             autoComplete="new-password"
             style={inputStyle}
           />
@@ -94,7 +96,7 @@ export function AccountSettings({ onBack }: Props) {
             type="password"
             value={pw2}
             onChange={(e) => setPw2(e.target.value)}
-            placeholder="Neues Passwort bestätigen"
+            placeholder={t.confirmNewPassword}
             autoComplete="new-password"
             style={inputStyle}
           />
@@ -104,7 +106,7 @@ export function AccountSettings({ onBack }: Props) {
             disabled={loading}
             style={{ width: '100%', padding: 14, fontSize: 15.5, opacity: loading ? 0.6 : 1 }}
           >
-            {loading ? 'Bitte warten…' : 'Passwort ändern'}
+            {loading ? t.pleaseWait : t.changePassword}
           </button>
         </form>
 
@@ -125,7 +127,7 @@ export function AccountSettings({ onBack }: Props) {
             fontSize: 15,
           }}
         >
-          Abmelden
+          {t.signOut}
         </button>
       </div>
     </div>

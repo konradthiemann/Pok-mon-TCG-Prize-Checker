@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { type Deck, type Round, fmt, isDemoDeck, starCard } from '../game'
 import { CardFace } from '../CardFace'
 import { NavBar } from './NavBar'
+import { useT } from '../i18n'
 
 interface Props {
   decks: Deck[]
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function Home({ decks, history, loggedIn, onMenu, onPlay, onImport, onStats, onDelete, onRename, onEdit }: Props) {
+  const t = useT()
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       <header
@@ -35,13 +37,13 @@ export function Home({ decks, history, loggedIn, onMenu, onPlay, onImport, onSta
           <img src="/icon.svg" alt="Prized" width={36} height={36} style={{ borderRadius: 10, flexShrink: 0 }} />
           <div>
             <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: 'var(--ink)' }}>Prized</h1>
-            <p style={{ margin: 0, color: 'var(--sub)', fontSize: 12 }}>Trainiere dein Preis-Gespür</p>
+            <p style={{ margin: 0, color: 'var(--sub)', fontSize: 12 }}>{t.tagline}</p>
           </div>
         </div>
         <button
           className="btn btn-ghost"
           onClick={onMenu}
-          aria-label="Menü öffnen"
+          aria-label={t.openMenu}
           style={{ padding: 8, color: 'var(--ink)' }}
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -81,7 +83,7 @@ export function Home({ decks, history, loggedIn, onMenu, onPlay, onImport, onSta
             fontSize: 14,
           }}
         >
-          + Deck importieren
+          {t.importDeck}
         </button>
       </div>
 
@@ -109,6 +111,7 @@ function DeckTile({
   onRename: (name: string) => void
   onEdit: () => void
 }) {
+  const t = useT()
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState(deck.name)
   const [showActions, setShowActions] = useState(false)
@@ -204,13 +207,13 @@ function DeckTile({
                 {deck.name}
               </span>
               {locked && (
-                <span style={{ fontSize: 12, color: 'var(--sub)' }}>Konto nötig</span>
+                <span style={{ fontSize: 12, color: 'var(--sub)' }}>{t.accountRequired}</span>
               )}
             </div>
             <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--sub)' }}>
-              {best != null ? `${fmt(best)} best` : 'Noch nicht gespielt'}
-              {acc != null ? ` · ${acc}% Genau.` : ''}
-              {rounds.length > 0 ? ` · ${rounds.length} Runden` : ''}
+              {best != null ? `${fmt(best)} best` : t.notPlayedYet}
+              {acc != null ? ` · ${acc}% ${t.accuracyShort}` : ''}
+              {rounds.length > 0 ? ` · ${rounds.length} ${t.rounds}` : ''}
             </p>
           </>
         )}
@@ -232,7 +235,7 @@ function DeckTile({
               alignItems: 'center',
               justifyContent: 'center',
             }}
-            aria-label="Deck-Optionen"
+            aria-label={t.deckOptions}
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
               <circle cx="7" cy="3" r="1.2" />
@@ -266,7 +269,7 @@ function DeckTile({
                     onEdit()
                   }}
                 >
-                  Bearbeiten
+                  {t.edit}
                 </ActionBtn>
                 <ActionBtn
                   onClick={() => {
@@ -275,7 +278,7 @@ function DeckTile({
                     setEditing(true)
                   }}
                 >
-                  Umbenennen
+                  {t.rename}
                 </ActionBtn>
                 <ActionBtn
                   color="var(--bad)"
@@ -284,7 +287,7 @@ function DeckTile({
                     onDelete()
                   }}
                 >
-                  Löschen
+                  {t.delete}
                 </ActionBtn>
               </div>
             </>

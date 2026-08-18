@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { googleEnabled } from '../auth/supabase'
+import { useT } from '../i18n'
 
 type Mode = 'login' | 'register' | 'forgot'
 
@@ -32,6 +33,7 @@ function GoogleLogo() {
 }
 
 export function Login({ onBack, onDone }: Props) {
+  const t = useT()
   const { signIn, signUp, signInWithGoogle, sendReset } = useAuth()
   const [mode, setMode] = useState<Mode>('login')
   const [name, setName] = useState('')
@@ -76,9 +78,9 @@ export function Login({ onBack, onDone }: Props) {
     }
   }
 
-  const title = mode === 'login' ? 'Anmelden' : mode === 'register' ? 'Registrieren' : 'Passwort vergessen'
+  const title = mode === 'login' ? t.signIn : mode === 'register' ? t.register : t.forgotPassword
   const submitLabel =
-    mode === 'login' ? 'Anmelden' : mode === 'register' ? 'Konto erstellen' : 'Link senden'
+    mode === 'login' ? t.signIn : mode === 'register' ? t.createAccount : t.sendLink
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
@@ -87,7 +89,7 @@ export function Login({ onBack, onDone }: Props) {
           className="btn btn-ghost"
           onClick={onBack}
           style={{ fontSize: 22, padding: '4px 10px', color: 'var(--ink)' }}
-          aria-label="Zurück"
+          aria-label={t.back}
         >
           ‹
         </button>
@@ -114,7 +116,7 @@ export function Login({ onBack, onDone }: Props) {
                     color: on ? '#fff' : 'var(--sub)',
                   }}
                 >
-                  {m === 'login' ? 'Anmelden' : 'Registrieren'}
+                  {m === 'login' ? t.signIn : t.register}
                 </button>
               )
             })}
@@ -126,7 +128,7 @@ export function Login({ onBack, onDone }: Props) {
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Name (optional)"
+              placeholder={t.nameOptional}
               autoComplete="name"
               style={inputStyle}
             />
@@ -136,7 +138,7 @@ export function Login({ onBack, onDone }: Props) {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="E-Mail"
+            placeholder={t.email}
             autoComplete="email"
             style={inputStyle}
           />
@@ -147,7 +149,7 @@ export function Login({ onBack, onDone }: Props) {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Passwort (min. 8 Zeichen)"
+              placeholder={t.passwordMin8}
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               style={inputStyle}
             />
@@ -159,7 +161,7 @@ export function Login({ onBack, onDone }: Props) {
             disabled={loading}
             style={{ width: '100%', padding: 14, fontSize: 15.5, opacity: loading ? 0.6 : 1 }}
           >
-            {loading ? 'Bitte warten…' : submitLabel}
+            {loading ? t.pleaseWait : submitLabel}
           </button>
         </form>
 
@@ -169,7 +171,7 @@ export function Login({ onBack, onDone }: Props) {
             onClick={() => { setMode('forgot'); reset() }}
             style={{ width: '100%', marginTop: 6, fontSize: 13.5, color: 'var(--accentInk)', fontWeight: 600 }}
           >
-            Passwort vergessen?
+            {t.forgotPasswordQ}
           </button>
         )}
         {mode === 'forgot' && (
@@ -178,7 +180,7 @@ export function Login({ onBack, onDone }: Props) {
             onClick={() => { setMode('login'); reset() }}
             style={{ width: '100%', marginTop: 6, fontSize: 13.5, color: 'var(--accentInk)', fontWeight: 600 }}
           >
-            ‹ Zurück zur Anmeldung
+            {t.backToLogin}
           </button>
         )}
 
@@ -198,7 +200,7 @@ export function Login({ onBack, onDone }: Props) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
               <span style={{ flex: 1, height: 1, background: 'var(--line)' }} />
               <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, color: 'var(--sub)' }}>
-                ODER
+                {t.or}
               </span>
               <span style={{ flex: 1, height: 1, background: 'var(--line)' }} />
             </div>
@@ -221,7 +223,7 @@ export function Login({ onBack, onDone }: Props) {
               }}
             >
               <GoogleLogo />
-              Mit Google anmelden
+              {t.signInWithGoogle}
             </button>
           </>
         )}

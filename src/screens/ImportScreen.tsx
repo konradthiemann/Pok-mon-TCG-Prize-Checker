@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { type Deck, parseImport, deckToText } from '../game'
+import { useT } from '../i18n'
 
 interface Props {
   onBack: () => void
@@ -11,11 +12,12 @@ const PLACEHOLDER =
   'Pokémon: 21\n4 Dreepy TWM 128\n4 Drakloak TWM 129\n3 Dragapult ex TWM 130\n…\nTrainer: 32\n4 Lillie\'s Determination MEG 119\n…\nEnergy: 7\n3 Psychic Energy MEE 5\n…'
 
 export function ImportScreen({ onBack, onSave, editDeck }: Props) {
+  const t = useT()
   const [name, setName] = useState(editDeck?.name ?? '')
   const [text, setText] = useState(() => editDeck ? deckToText(editDeck) : '')
-  const parsed = useMemo(() => parseImport(text), [text])
+  const parsed = useMemo(() => parseImport(text, t.parseExpected), [text, t.parseExpected])
 
-  const mark = parsed.total === 60 ? '✓' : parsed.total > 60 ? '– zu viele' : ''
+  const mark = parsed.total === 60 ? '✓' : parsed.total > 60 ? t.tooMany : ''
   const totalColor =
     parsed.total === 60 ? 'var(--good)' : parsed.total > 0 ? 'var(--warn)' : 'var(--sub)'
   const canSave = parsed.total === 60 && parsed.errors.length === 0 && name.trim().length > 0
@@ -27,14 +29,14 @@ export function ImportScreen({ onBack, onSave, editDeck }: Props) {
           className="btn btn-ghost"
           onClick={onBack}
           style={{ padding: '4px 10px', color: 'var(--ink)' }}
-          aria-label="Zurück"
+          aria-label={t.back}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M10 3L5 8l5 5" />
           </svg>
         </button>
         <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: 'var(--ink)' }}>
-          {editDeck ? 'Deck bearbeiten' : 'Deck importieren'}
+          {editDeck ? t.editDeck : t.importDeckTitle}
         </h1>
       </header>
 
@@ -42,7 +44,7 @@ export function ImportScreen({ onBack, onSave, editDeck }: Props) {
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Deckname"
+          placeholder={t.deckName}
           style={{
             width: '100%',
             padding: '12px 14px',
@@ -87,9 +89,9 @@ export function ImportScreen({ onBack, onSave, editDeck }: Props) {
             color: 'var(--sub)',
           }}
         >
-          <Pill label="Pokémon" value={parsed.pk} />
-          <Pill label="Trainer" value={parsed.tr} />
-          <Pill label="Energie" value={parsed.en} />
+          <Pill label={t.pokemon} value={parsed.pk} />
+          <Pill label={t.trainer} value={parsed.tr} />
+          <Pill label={t.energy} value={parsed.en} />
           <span style={{ fontWeight: 700, color: totalColor, marginLeft: 'auto' }}>
             {parsed.total} / 60 {mark}
           </span>
@@ -97,7 +99,7 @@ export function ImportScreen({ onBack, onSave, editDeck }: Props) {
 
         {parsed.errors.slice(0, 4).map((er) => (
           <p key={er.line} style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--bad)' }}>
-            Zeile {er.line}: {er.msg}
+            {t.line} {er.line}: {er.msg}
           </p>
         ))}
       </div>
@@ -109,7 +111,7 @@ export function ImportScreen({ onBack, onSave, editDeck }: Props) {
           disabled={!canSave}
           style={{ width: '100%', padding: 14, fontSize: 14, opacity: canSave ? 1 : 0.4 }}
         >
-          {editDeck ? 'Änderungen speichern' : 'Deck speichern'}
+          {editDeck ? t.saveChanges : t.saveDeck}
         </button>
       </div>
     </div>

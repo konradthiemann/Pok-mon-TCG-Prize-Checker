@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { type CardInput, type CardType, parseImport } from '../game'
 import { resolveCardApi } from '../cardImages'
 import { CardFace } from '../CardFace'
+import { useT } from '../i18n'
 
 interface Props {
   onBack: () => void
@@ -82,6 +83,7 @@ function fromInput(ci: CardInput): BuilderCard {
 type Tab = 'paste' | 'search' | 'deck'
 
 export function DeckBuilder({ onBack, onSave }: Props) {
+  const t = useT()
   const [name, setName] = useState('')
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<BuilderCard[]>([])
@@ -106,12 +108,12 @@ export function DeckBuilder({ onBack, onSave }: Props) {
       const res = await fetch(
         `https://api.pokemontcg.io/v2/cards?q=${q}&pageSize=30&orderBy=-set.releaseDate`,
       )
-      if (!res.ok) throw new Error(`Suche fehlgeschlagen (${res.status})`)
+      if (!res.ok) throw new Error(`${t.searchFailed} (${res.status})`)
       const json = (await res.json()) as { data: ApiCard[] }
-      if (json.data.length === 0) setSearchError('Keine Karten gefunden. Nutze „Liste einfügen".')
+      if (json.data.length === 0) setSearchError(t.noCardsFound)
       setResults(json.data.map(mapCard))
     } catch {
-      setSearchError('Karten-API nicht erreichbar. Nutze stattdessen „Liste einfügen".')
+      setSearchError(t.apiUnavailable)
       setResults([])
     } finally {
       setLoading(false)
@@ -181,18 +183,18 @@ export function DeckBuilder({ onBack, onSave }: Props) {
           className="btn btn-ghost"
           onClick={onBack}
           style={{ fontSize: 22, padding: '4px 10px', color: 'var(--ink)' }}
-          aria-label="Zurück"
+          aria-label={t.back}
         >
           ‹
         </button>
-        <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: 'var(--ink)' }}>Deck erstellen</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: 'var(--ink)' }}>{t.createDeck}</h1>
       </header>
 
       <div style={{ padding: '4px 16px 10px' }}>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Deckname"
+          placeholder={t.deckName}
           style={{ ...inputStyle, marginBottom: 10 }}
         />
         <div
@@ -222,8 +224,7 @@ export function DeckBuilder({ onBack, onSave }: Props) {
       {tab === 'paste' && (
         <div className="pc-scroll" style={{ padding: '2px 16px 16px' }}>
           <p style={{ color: 'var(--sub)', fontSize: 13.5, margin: '2px 0 8px', lineHeight: 1.5 }}>
-            Füge deine Deckliste ein (eine Karte pro Zeile, z. B. „4 Beldum CRI 59"). Kopfzeilen wie
-            „Pokémon: 19" werden ignoriert.
+            {t.pasteHelp}
           </p>
           <textarea
             value={paste}
@@ -238,16 +239,16 @@ export function DeckBuilder({ onBack, onSave }: Props) {
             className="btn btn-primary"
             style={{ marginTop: 10, width: '100%', padding: '13px 0', opacity: paste.trim() ? 1 : 0.4 }}
           >
-            Karten übernehmen
+            {t.applyCards}
           </button>
           {parseErrors.length > 0 && (
             <div style={{ marginTop: 12 }}>
               <p style={{ color: 'var(--bad)', fontSize: 13, fontWeight: 700, margin: '0 0 4px' }}>
-                {parseErrors.length} Zeile{parseErrors.length > 1 ? 'n' : ''} nicht erkannt:
+                {t.linesNotRecognized(parseErrors.length)}
               </p>
               {parseErrors.map((e) => (
                 <p key={e.line} style={{ color: 'var(--sub)', fontSize: 12.5, margin: '2px 0' }}>
-                  Zeile {e.line}: {e.msg}
+                  {t.line} {e.line}: {e.msg}
                 </p>
               ))}
             </div>
@@ -261,7 +262,7 @@ export function DeckBuilder({ onBack, onSave }: Props) {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Karte suchen (z. B. Dragapult)"
+              placeholder={t.searchPlaceholder}
               style={inputStyle}
             />
             <button
@@ -277,7 +278,7 @@ export function DeckBuilder({ onBack, onSave }: Props) {
             {searchError && <p style={{ color: 'var(--bad)', fontSize: 13 }}>{searchError}</p>}
             {!searchError && results.length === 0 && (
               <p style={{ color: 'var(--sub)', fontSize: 13.5, textAlign: 'center', marginTop: 24 }}>
-                Suche nach einzelnen Karten, oder nutze „Liste einfügen".
+                {t.searchHint}
               </p>
             )}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
@@ -325,7 +326,7 @@ export function DeckBuilder({ onBack, onSave }: Props) {
         <div className="pc-scroll" style={{ padding: '2px 16px 16px' }}>
           {list.length === 0 && (
             <p style={{ color: 'var(--sub)', fontSize: 13.5, textAlign: 'center', marginTop: 24 }}>
-              Noch keine Karten im Deck.
+              {t.noCardsInDeck}
             </p>
           )}
           {list.map((c) => (
@@ -371,16 +372,16 @@ export function DeckBuilder({ onBack, onSave }: Props) {
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}
       >
-        <TabBtn active={tab === 'paste'} label="Liste" onClick={() => setTab('paste')} />
-        <TabBtn active={tab === 'search'} label="Suche" onClick={() => setTab('search')} />
-        <TabBtn active={tab === 'deck'} label={`Deck (${total})`} onClick={() => setTab('deck')} />
+        <TabBtn active={tab === 'paste'} label={t.listTab} onClick={() => setTab('paste')} />
+        <TabBtn active={tab === 'search'} label={t.searchTab} onClick={() => setTab('search')} />
+        <TabBtn active={tab === 'deck'} label={`${t.deck} (${total})`} onClick={() => setTab('deck')} />
         <button
           onClick={() => canSave && onSave(name.trim(), list.map(({ n, s, c, api, t, q, b }) => ({ n, s, c, api, t, q, b })))}
           disabled={!canSave}
           className="btn btn-primary"
           style={{ flex: 1.4, margin: 8, borderRadius: 14, padding: '12px 0', opacity: canSave ? 1 : 0.4 }}
         >
-          Speichern
+          {t.save}
         </button>
       </nav>
     </div>
@@ -412,10 +413,10 @@ function Stepper({ onMinus, onPlus, disabled }: { onMinus: () => void; onPlus: (
   }
   return (
     <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
-      <button onClick={onMinus} disabled={disabled} style={{ ...btn, opacity: disabled ? 0.4 : 1 }} aria-label="Weniger">
+      <button onClick={onMinus} disabled={disabled} style={{ ...btn, opacity: disabled ? 0.4 : 1 }} aria-label="−">
         −
       </button>
-      <button onClick={onPlus} style={btn} aria-label="Mehr">
+      <button onClick={onPlus} style={btn} aria-label="＋">
         ＋
       </button>
     </div>

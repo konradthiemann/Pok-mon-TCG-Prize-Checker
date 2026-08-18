@@ -1,3 +1,5 @@
+import { useT } from '../i18n'
+
 interface Props {
   active: 'decks' | 'stats'
   onDecks: () => void
@@ -5,6 +7,7 @@ interface Props {
 }
 
 export function NavBar({ active, onDecks, onStats }: Props) {
+  const t = useT()
   return (
     <nav
       style={{
@@ -18,13 +21,13 @@ export function NavBar({ active, onDecks, onStats }: Props) {
         flexShrink: 0,
       }}
     >
-      <NavItem active={active === 'decks'} label="Decks" onClick={onDecks}>
+      <NavItem active={active === 'decks'} label={t.decks} onClick={onDecks}>
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <rect x="2" y="3" width="10" height="14" rx="2" />
           <path d="M12 5h1a2 2 0 012 2v8a2 2 0 01-2 2h-1" />
         </svg>
       </NavItem>
-      <NavItem active={active === 'stats'} label="Statistik" onClick={onStats}>
+      <NavItem active={active === 'stats'} label={t.stats} onClick={onStats}>
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <line x1="5" y1="14" x2="5" y2="8" />
           <line x1="9" y1="14" x2="9" y2="4" />

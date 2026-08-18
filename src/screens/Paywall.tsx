@@ -1,3 +1,5 @@
+import { useT } from '../i18n'
+
 interface Props {
   onBack: () => void
   loggedIn: boolean
@@ -5,6 +7,7 @@ interface Props {
 }
 
 export function Paywall({ onBack, loggedIn, onLogin }: Props) {
+  const t = useT()
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       <header style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '18px 16px 8px' }}>
@@ -12,11 +15,11 @@ export function Paywall({ onBack, loggedIn, onLogin }: Props) {
           className="btn btn-ghost"
           onClick={onBack}
           style={{ fontSize: 22, padding: '4px 10px', color: 'var(--ink)' }}
-          aria-label="Zurück"
+          aria-label={t.back}
         >
           ‹
         </button>
-        <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: 'var(--ink)' }}>Premium</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: 'var(--ink)' }}>{t.premium}</h1>
       </header>
 
       <div
@@ -47,11 +50,10 @@ export function Paywall({ onBack, loggedIn, onLogin }: Props) {
           🔒
         </div>
         <h2 style={{ fontSize: 22, fontWeight: 800, margin: '22px 0 10px', color: 'var(--ink)' }}>
-          Spiele mit all deinen Decks
+          {t.playAllDecks}
         </h2>
         <p style={{ fontSize: 15, lineHeight: 1.55, color: 'var(--sub)', maxWidth: 340, margin: 0 }}>
-          Mit Premium schaltest du das Spielen eigener und importierter Decks frei. Das Demo-Deck
-          bleibt immer kostenlos.
+          {t.premiumDesc}
         </p>
 
         <span
@@ -65,20 +67,20 @@ export function Paywall({ onBack, loggedIn, onLogin }: Props) {
             borderRadius: 999,
           }}
         >
-          Bald verfügbar
+          {t.comingSoon}
         </span>
 
         {!loggedIn && (
           <>
             <p style={{ fontSize: 13, color: 'var(--sub)', margin: '26px 0 10px' }}>
-              Melde dich an, um dein Abo mit deinem Konto zu verknüpfen.
+              {t.loginForSub}
             </p>
             <button
               className="btn btn-primary"
               onClick={onLogin}
               style={{ padding: '13px 28px', fontSize: 15 }}
             >
-              Anmelden
+              {t.signIn}
             </button>
           </>
         )}

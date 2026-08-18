@@ -1,16 +1,11 @@
 import { type ReactNode } from 'react'
+import { useT } from '../i18n'
 
 export type LegalDoc = 'impressum' | 'datenschutz' | 'agb'
 
 interface Props {
   doc: LegalDoc
   onBack: () => void
-}
-
-const TITLES: Record<LegalDoc, string> = {
-  impressum: 'Impressum',
-  datenschutz: 'Datenschutz',
-  agb: 'Nutzungsbedingungen',
 }
 
 const OPERATOR = {
@@ -21,6 +16,12 @@ const OPERATOR = {
 }
 
 export function Legal({ doc, onBack }: Props) {
+  const t = useT()
+  const TITLES: Record<LegalDoc, string> = {
+    impressum: t.impressum,
+    datenschutz: t.datenschutz,
+    agb: t.nutzungsbedingungen,
+  }
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       <header style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '18px 16px 10px' }}>
@@ -28,7 +29,7 @@ export function Legal({ doc, onBack }: Props) {
           className="btn btn-ghost"
           onClick={onBack}
           style={{ padding: '4px 10px', color: 'var(--ink)' }}
-          aria-label="Zurück"
+          aria-label={t.back}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M10 3L5 8l5 5" />

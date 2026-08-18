@@ -172,8 +172,13 @@ export function fmt(sec: number): string {
   return m + ':' + (s < 10 ? '0' : '') + s.toFixed(1)
 }
 
-export function ago(ts: number): string {
+export function ago(ts: number, labels?: { justNow: string; hoursAgo: (h: number) => string; daysAgo: (d: number) => string }): string {
   const d = (Date.now() - ts) / 36e5
+  if (labels) {
+    if (d < 1) return labels.justNow
+    if (d < 24) return labels.hoursAgo(Math.round(d))
+    return labels.daysAgo(Math.round(d / 24))
+  }
   if (d < 1) return 'gerade eben'
   if (d < 24) return Math.round(d) + 'h her'
   return Math.round(d / 24) + 'd her'
@@ -342,7 +347,7 @@ export interface ParseResult {
 }
 
 // Deckliste im Standard-TCG-Format parsen ("4 Dreepy TWM 128").
-export function parseImport(text: string): ParseResult {
+export function parseImport(text: string, parseExpected?: string): ParseResult {
   const lines = (text || '').split('\n')
   let pk = 0
   let tr = 0
@@ -350,6 +355,7 @@ export function parseImport(text: string): ParseResult {
   let sec: CardType = 'P'
   const errors: { line: number; msg: string }[] = []
   const cards: CardInput[] = []
+  const expectedMsg = parseExpected ?? '— erwartet "4 Name SET 123"'
   lines.forEach((raw, i) => {
     const line = raw.trim()
     if (!line) return
@@ -362,7 +368,7 @@ export function parseImport(text: string): ParseResult {
     if (!m) {
       errors.push({
         line: i + 1,
-        msg: '"' + (line.length > 28 ? line.slice(0, 28) + '…' : line) + '" — erwartet "4 Name SET 123"',
+        msg: '"' + (line.length > 28 ? line.slice(0, 28) + '…' : line) + '" ' + expectedMsg,
       })
       return
     }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { type Deck, type Round, ago, fmt } from '../game'
 import { NavBar } from './NavBar'
+import { useT } from '../i18n'
 
 interface Props {
   decks: Deck[]
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function Stats({ decks, history, onMenu, onHome }: Props) {
+  const t = useT()
   const [filter, setFilter] = useState<string>('all')
   const rounds = history.filter((x) => filter === 'all' || x.d === filter)
   const dName: Record<string, string> = {}
@@ -20,7 +22,7 @@ export function Stats({ decks, history, onMenu, onHome }: Props) {
   const avgA = has ? Math.round((rounds.reduce((a, x) => a + x.h, 0) / rounds.length / 6) * 100) : 0
   const best = has ? Math.min(...rounds.map((x) => x.t)) : 0
 
-  const chips = [{ id: 'all', label: 'Alle Decks' }, ...decks.map((d) => ({ id: d.id, label: d.name }))]
+  const chips = [{ id: 'all', label: t.allDecks }, ...decks.map((d) => ({ id: d.id, label: d.name }))]
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
@@ -36,11 +38,11 @@ export function Stats({ decks, history, onMenu, onHome }: Props) {
           background: 'var(--bg)',
         }}
       >
-        <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: 'var(--ink)' }}>Statistik</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: 'var(--ink)' }}>{t.stats}</h1>
         <button
           className="btn btn-ghost"
           onClick={onMenu}
-          aria-label="Menü öffnen"
+          aria-label={t.openMenu}
           style={{ padding: 8, color: 'var(--ink)' }}
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -77,9 +79,9 @@ export function Stats({ decks, history, onMenu, onHome }: Props) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
-          <Big value={has ? fmt(avgT) : '—'} label="Ø Zeit" />
-          <Big value={has ? avgA + '%' : '—'} label="Ø Genauigkeit" />
-          <Big value={has ? fmt(best) : '—'} label="Beste Zeit" />
+          <Big value={has ? fmt(avgT) : '—'} label={t.avgTime} />
+          <Big value={has ? avgA + '%' : '—'} label={t.avgAccuracy} />
+          <Big value={has ? fmt(best) : '—'} label={t.bestTime} />
         </div>
 
         {has && <Chart rounds={rounds.slice(-12)} />}
@@ -94,7 +96,7 @@ export function Stats({ decks, history, onMenu, onHome }: Props) {
             color: 'var(--sub)',
           }}
         >
-          Letzte Runden
+          {t.recentRounds}
         </p>
         {rounds
           .slice(-8)
@@ -116,9 +118,9 @@ export function Stats({ decks, history, onMenu, onHome }: Props) {
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>
-                    {dName[r.d] || 'Deck'}
+                    {dName[r.d] || t.deck}
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--sub)' }}>{ago(r.ts)}</div>
+                  <div style={{ fontSize: 12, color: 'var(--sub)' }}>{ago(r.ts, t)}</div>
                 </div>
                 <span
                   style={{
@@ -145,7 +147,7 @@ export function Stats({ decks, history, onMenu, onHome }: Props) {
           })}
         {!has && (
           <p style={{ color: 'var(--sub)', fontSize: 14, textAlign: 'center', marginTop: 20 }}>
-            Noch keine Runden gespielt.
+            {t.noRoundsYet}
           </p>
         )}
       </div>
@@ -167,6 +169,7 @@ function Big({ value, label }: { value: string; label: string }) {
 }
 
 function Chart({ rounds }: { rounds: Round[] }) {
+  const t = useT()
   const maxT = Math.max(...rounds.map((x) => x.t)) * 1.15 || 1
   const px = (i: number) => (rounds.length > 1 ? 6 + i * (308 / (rounds.length - 1)) : 160)
   const timePts = rounds
@@ -179,8 +182,8 @@ function Chart({ rounds }: { rounds: Round[] }) {
   return (
     <div style={{ background: 'var(--surface)', borderRadius: 10, padding: 12 }}>
       <div style={{ display: 'flex', gap: 12, marginBottom: 8, fontSize: 12 }}>
-        <Legend color="var(--accentInk)" label="Zeit" />
-        <Legend color="var(--good)" label="Genauigkeit" />
+        <Legend color="var(--accentInk)" label={t.time} />
+        <Legend color="var(--good)" label={t.accuracy} />
       </div>
       <svg viewBox="0 0 320 110" style={{ width: '100%', height: 'auto', overflow: 'visible' }}>
         <polyline points={timePts} fill="none" stroke="var(--accentInk)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
