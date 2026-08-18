@@ -58,6 +58,7 @@ export function App() {
   const [history, setHistory] = useState<Round[]>(() => loadHistory())
   const [game, setGame] = useState<GameState | null>(null)
   const [result, setResult] = useState<Result | null>(null)
+  const [editingDeck, setEditingDeck] = useState<Deck | null>(null)
   // Gast: Demo-Decks frei spielbar, importierte Decks brauchen Account.
   // Eingeloggt: alles spielbar. Premium/Paywall kommt später.
   const loggedIn = configured && !!user
@@ -202,20 +203,25 @@ export function App() {
 
   const saveImportedDeck = (name: string, text: string) => {
     const parsed = parseImport(text)
-    const deck: Deck = {
-      id: 'd' + Date.now(),
-      name: name.trim(),
-      format: 'Standard',
-      cards: cardsOf(parsed.cards),
+    if (editingDeck) {
+      // Edit-Modus: bestehendes Deck aktualisieren
+      const updated: Deck = { ...editingDeck, name: name.trim(), cards: cardsOf(parsed.cards) }
+      updateDeck(updated)
+      setEditingDeck(null)
+      setScreen('home')
+      void resolveDeckImages(updated.cards, (cards) => updateDeck({ ...updated, cards }))
+    } else {
+      // Neues Deck
+      const deck: Deck = {
+        id: 'd' + Date.now(),
+        name: name.trim(),
+        format: 'Standard',
+        cards: cardsOf(parsed.cards),
+      }
+      persistDeck(deck)
+      setScreen('home')
+      void resolveDeckImages(deck.cards, (cards) => updateDeck({ ...deck, cards }))
     }
-    persistDeck(deck)
-    setScreen('home')
-    // Bilder für Karten aus Sets ohne bekannte Zuordnung nachladen und das Deck
-    // damit aktualisieren, damit im Spiel immer eine Kartenvorderseite erscheint.
-    void resolveDeckImages(
-      deck.cards,
-      (cards) => updateDeck({ ...deck, cards }),
-    )
   }
 
   const themeCls = theme === 'dark' ? 'pc dark' : 'pc'
@@ -227,7 +233,8 @@ export function App() {
       loggedIn={loggedIn}
       onMenu={() => setMenuOpen(true)}
       onPlay={startGame}
-      onImport={() => setScreen('import')}
+      onImport={() => { setEditingDeck(null); setScreen('import') }}
+      onEdit={(deck) => { setEditingDeck(deck); setScreen('import') }}
       onStats={() => setScreen('stats')}
       onDelete={deleteDeck}
       onRename={(id, name) => {
@@ -244,7 +251,7 @@ export function App() {
       case 'home':
         return homeScreen
       case 'import':
-        return <ImportScreen onBack={() => setScreen('home')} onSave={saveImportedDeck} />
+        return <ImportScreen onBack={() => { setEditingDeck(null); setScreen('home') }} onSave={saveImportedDeck} editDeck={editingDeck ?? undefined} />
       case 'login':
         return <Login onBack={() => setScreen('home')} onDone={() => setScreen('home')} />
       case 'account':

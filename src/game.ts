@@ -356,3 +356,20 @@ export function parseImport(text: string): ParseResult {
   })
   return { pk, tr, en, total: pk + tr + en, errors, cards }
 }
+
+// Deck-Karten zurück ins Standard-Import-Format konvertieren.
+export function deckToText(deck: Deck): string {
+  const sections: Record<CardType, Card[]> = { P: [], T: [], E: [] }
+  deck.cards.forEach((c) => sections[c.t].push(c))
+  const labels: Record<CardType, string> = { P: 'Pokémon', T: 'Trainer', E: 'Energy' }
+  const lines: string[] = []
+  for (const t of ['P', 'T', 'E'] as CardType[]) {
+    const cards = sections[t]
+    if (!cards.length) continue
+    const total = cards.reduce((a, c) => a + c.q, 0)
+    lines.push(`${labels[t]}: ${total}`)
+    cards.forEach((c) => lines.push(`${c.q} ${c.n} ${c.s} ${c.c}`))
+    lines.push('')
+  }
+  return lines.join('\n').trim()
+}

@@ -13,9 +13,10 @@ interface Props {
   onStats: () => void
   onDelete: (deckId: string) => void
   onRename: (deckId: string, name: string) => void
+  onEdit: (deck: Deck) => void
 }
 
-export function Home({ decks, history, loggedIn, onMenu, onPlay, onImport, onStats, onDelete, onRename }: Props) {
+export function Home({ decks, history, loggedIn, onMenu, onPlay, onImport, onStats, onDelete, onRename, onEdit }: Props) {
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       <header
@@ -62,6 +63,7 @@ export function Home({ decks, history, loggedIn, onMenu, onPlay, onImport, onSta
             onPlay={() => onPlay(d)}
             onDelete={() => onDelete(d.id)}
             onRename={(name) => onRename(d.id, name)}
+            onEdit={() => onEdit(d)}
           />
         ))}
 
@@ -96,6 +98,7 @@ function DeckTile({
   onPlay,
   onDelete,
   onRename,
+  onEdit,
 }: {
   deck: Deck
   history: Round[]
@@ -104,6 +107,7 @@ function DeckTile({
   onPlay: () => void
   onDelete: () => void
   onRename: (name: string) => void
+  onEdit: () => void
 }) {
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState(deck.name)
@@ -256,6 +260,14 @@ function DeckTile({
                   boxShadow: '0 4px 12px rgba(0,0,0,.12)',
                 }}
               >
+                <ActionBtn
+                  onClick={() => {
+                    setShowActions(false)
+                    onEdit()
+                  }}
+                >
+                  Bearbeiten
+                </ActionBtn>
                 <ActionBtn
                   onClick={() => {
                     setShowActions(false)
