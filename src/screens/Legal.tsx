@@ -159,10 +159,9 @@ function Datenschutz() {
 
       <H>Schriftarten</H>
       <P>
-        Prized bindet die Schriftart „Sora" über Google Fonts (fonts.googleapis.com /
-        fonts.gstatic.com) ein. Dabei wird deine IP-Adresse an Google übertragen. Rechtsgrundlage
-        ist unser berechtigtes Interesse an einer einheitlichen Darstellung (Art. 6 Abs. 1 lit. f
-        DSGVO).
+        Prized verwendet die Schriftart „Sora". Die Schriftdateien werden direkt von unserem eigenen
+        Server ausgeliefert (Self-Hosting). Es findet keine Verbindung zu Google Fonts oder anderen
+        externen Schriftarten-Diensten statt.
       </P>
 
       <H>Hosting</H>
