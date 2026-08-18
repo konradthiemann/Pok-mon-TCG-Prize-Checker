@@ -157,6 +157,7 @@ const de = {
 
   // Parse error
   parseExpected: '— erwartet "4 Name SET 123"',
+  throttleWait: (s: number) => `Zu viele Versuche. Bitte warte ${s}s.`,
 }
 
 const en: typeof de = {
@@ -297,6 +298,7 @@ const en: typeof de = {
   daysAgo: (d: number) => `${d}d ago`,
 
   parseExpected: '— expected "4 Name SET 123"',
+  throttleWait: (s: number) => `Too many attempts. Please wait ${s}s.`,
 }
 
 export type Translations = typeof de

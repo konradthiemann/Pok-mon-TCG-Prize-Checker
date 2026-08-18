@@ -57,11 +57,24 @@ app.use(
 
 app.get('/healthz', (_req, res) => res.json({ ok: true }))
 
+// Source Maps und dotfiles blockieren
+app.use((_req, res, next) => {
+  if (_req.path.endsWith('.map') || _req.path.includes('/.')) {
+    return res.status(404).end()
+  }
+  next()
+})
+
 app.use(express.static(DIST_DIR, { maxAge: '1h', index: false }))
 
-// SPA-Fallback: alle übrigen Routen liefern index.html.
-app.get('*', (_req, res) => {
-  res.sendFile(path.join(DIST_DIR, 'index.html'))
+// SPA-Fallback: nur für Navigation-Requests (HTML), alles andere → 404.
+app.get('*', (req, res) => {
+  const accept = req.headers.accept || ''
+  if (accept.includes('text/html')) {
+    res.sendFile(path.join(DIST_DIR, 'index.html'))
+  } else {
+    res.status(404).end()
+  }
 })
 
 app.listen(PORT, () => {

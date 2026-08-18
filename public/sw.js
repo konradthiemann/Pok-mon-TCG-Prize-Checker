@@ -24,14 +24,22 @@ self.addEventListener('fetch', (e) => {
   if (request.method !== 'GET') return
   const url = new URL(request.url)
 
-  // Pokémon-Kartenbilder: cache-first, dann Netzwerk (dauerhaft gecacht).
+  // Pokémon-Kartenbilder: cache-first, dann Netzwerk. Max 200 Einträge.
   if (url.hostname === 'images.pokemontcg.io') {
     e.respondWith(
       caches.open(IMG).then(async (cache) => {
         const hit = await cache.match(request)
         if (hit) return hit
         const res = await fetch(request)
-        if (res.ok) cache.put(request, res.clone())
+        if (res.ok) {
+          cache.put(request, res.clone())
+          // Evict älteste Einträge wenn Cache > 200
+          cache.keys().then((keys) => {
+            if (keys.length > 200) {
+              keys.slice(0, keys.length - 200).forEach((k) => cache.delete(k))
+            }
+          })
+        }
         return res
       }),
     )

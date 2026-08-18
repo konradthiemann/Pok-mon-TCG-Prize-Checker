@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react'
+import { useState, useRef, type CSSProperties } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { googleEnabled } from '../auth/supabase'
 import { useT } from '../i18n'
@@ -42,6 +42,8 @@ export function Login({ onBack, onDone }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const failCount = useRef(0)
+  const lockedUntil = useRef(0)
 
   const reset = () => {
     setError(null)
@@ -50,6 +52,11 @@ export function Login({ onBack, onDone }: Props) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
+    if (Date.now() < lockedUntil.current) {
+      const secs = Math.ceil((lockedUntil.current - Date.now()) / 1000)
+      setError(t.throttleWait(secs))
+      return
+    }
     reset()
     setLoading(true)
     let res
@@ -58,9 +65,15 @@ export function Login({ onBack, onDone }: Props) {
     else res = await sendReset(email)
     setLoading(false)
     if (res.error) {
+      failCount.current++
+      if (failCount.current >= 3) {
+        const delay = Math.min(30_000, failCount.current * 5_000)
+        lockedUntil.current = Date.now() + delay
+      }
       setError(res.error)
       return
     }
+    failCount.current = 0
     if (res.info) {
       setInfo(res.info)
       return

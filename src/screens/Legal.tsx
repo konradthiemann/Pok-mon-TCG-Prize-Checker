@@ -12,7 +12,7 @@ const OPERATOR = {
   name: 'Konrad Thiemann',
   street: '[Straße und Hausnummer]',
   city: '[PLZ und Ort]',
-  email: 'konrad.gruss@t-online.de',
+  email: 'prized@konradthiemann.de',
 }
 
 export function Legal({ doc, onBack }: Props) {
