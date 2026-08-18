@@ -192,6 +192,25 @@ export interface GameState {
   end?: number
 }
 
+// Liest den Basis-Status-Cache aus localStorage (von cardImages.ts befüllt).
+function loadBasicCache(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem('pc_basic_v1') || '{}')
+  } catch {
+    return {}
+  }
+}
+
+// Prüft ob eine Karte ein Basis-Pokémon ist. Nutzt: Card.b → Cache → Heuristik.
+function isBasic(c: Card, cache: Record<string, string>): boolean | null {
+  if (c.b === 1) return true
+  if (c.b === 0) return false
+  if (c.api && cache[c.api] !== undefined) return cache[c.api] === '1'
+  // Heuristik: "Mega X" ist nie Basis
+  if (c.n.startsWith('Mega ')) return false
+  return null // unbekannt
+}
+
 // Instanzen aus Deck bilden, mischen und Hand/Preise/aktive Position austeilen.
 export function deal(deck: Deck): GameState {
   const inst: Card[] = []
@@ -202,14 +221,16 @@ export function deal(deck: Deck): GameState {
     const j = Math.floor(Math.random() * (i + 1))
     ;[inst[i], inst[j]] = [inst[j], inst[i]]
   }
-  // 1. Bestätigte Basis-Pokémon (b === 1, z. B. via API aufgelöst)
-  let cand = inst.map((c, i) => (c.b === 1 ? i : -1)).filter((i) => i >= 0)
+  const basicCache = loadBasicCache()
+  // 1. Bestätigte Basis-Pokémon (b-Flag ODER Cache)
+  let cand = inst
+    .map((c, i) => (c.t === 'P' && isBasic(c, basicCache) === true ? i : -1))
+    .filter((i) => i >= 0)
   if (!cand.length) {
-    // 2. Heuristik: Pokémon, keine bestätigten Nicht-Basis, kein "Mega "-Präfix,
-    //    bevorzugt höchste Kopienanzahl (Basis-Pokémon sind typischerweise 4×)
+    // 2. Pokémon die NICHT bestätigt Nicht-Basis sind, höchste Kopienanzahl
     const pokemon = inst
       .map((c, i) =>
-        c.t === 'P' && c.b !== 0 && !c.n.startsWith('Mega ')
+        c.t === 'P' && isBasic(c, basicCache) !== false
           ? { i, q: c.q }
           : null,
       )
