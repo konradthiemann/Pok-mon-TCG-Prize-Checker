@@ -1,6 +1,8 @@
 // Prized-Server: liefert die statisch gebaute SPA aus `dist/`.
 // Die App ist rein clientseitig (localStorage) — kein Backend-State nötig.
 import express from 'express'
+import helmet from 'helmet'
+import rateLimit from 'express-rate-limit'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -9,6 +11,49 @@ const DIST_DIR = path.join(__dirname, '..', 'dist')
 const PORT = Number(process.env.PORT) || 8080
 
 const app = express()
+
+// Security Headers (X-Frame-Options, HSTS, X-Content-Type-Options, Referrer-Policy, etc.)
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        imgSrc: [
+          "'self'",
+          'data:',
+          'https://images.pokemontcg.io',
+          'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com',
+          'https://r2.limitlesstcg.net',
+          'https://raw.githubusercontent.com',
+        ],
+        connectSrc: [
+          "'self'",
+          'https://api.pokemontcg.io',
+          'https://*.supabase.co',
+          'https://pokeapi.co',
+        ],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false, // Card-Bilder von externen CDNs brauchen COEP: unsafe-none
+  }),
+)
+
+// Rate Limiting: max 120 Requests pro Minute pro IP
+app.use(
+  rateLimit({
+    windowMs: 60_000,
+    max: 120,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+  }),
+)
 
 app.get('/healthz', (_req, res) => res.json({ ok: true }))
 
