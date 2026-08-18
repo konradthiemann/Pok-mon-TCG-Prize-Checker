@@ -109,17 +109,45 @@ export async function resolveCardApi(card: CardInput): Promise<string | null> {
   return api || null
 }
 
+// Prüft über die pokemontcg.io-API ob ein Pokémon ein Basis-Pokémon ist.
+// Gecacht in localStorage, damit ein Deck nur einmal aufgelöst werden muss.
+const BASIC_CACHE_KEY = 'pc_basic_v1'
+
+async function resolveBasicStatus(api: string): Promise<boolean | null> {
+  const cache = loadCache(BASIC_CACHE_KEY)
+  if (has(cache, api)) return cache[api] === '1'
+
+  const id = api.replace('/', '-')
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(`${BASE}/cards/${id}?select=subtypes`)
+      if (res.ok) {
+        const json = (await res.json()) as { data?: { subtypes?: string[] } }
+        const subtypes = json.data?.subtypes ?? []
+        const isBasic = subtypes.includes('Basic')
+        cache[api] = isBasic ? '1' : '0'
+        saveCache(BASIC_CACHE_KEY, cache)
+        return isBasic
+      }
+    } catch {
+      /* Netzwerkfehler — erneut versuchen. */
+    }
+    await new Promise((r) => setTimeout(r, 300 * (attempt + 1)))
+  }
+  return null
+}
+
 // Füllt fehlende Bild-Pfade eines Decks nach (für Karten aus Sets, die nicht in
-// SETMAP stehen — z. B. importierte Decks). Sequenziell + gedrosselt, damit die
-// anonyme pokemontcg.io-API nicht rate-limitet. Ruft `onProgress` mit einer
-// aktualisierten Kartenliste auf, sobald ein Bild gefunden wurde, und liefert am
-// Ende die vollständige Liste. Ist `alive()` false, wird abgebrochen.
+// SETMAP stehen — z. B. importierte Decks) UND löst den Basis-Status für Pokémon
+// auf, damit deal() korrekt ein Basis-Pokémon als aktives Pokémon wählt.
+// Sequenziell + gedrosselt, damit die anonyme pokemontcg.io-API nicht rate-limitet.
 export async function resolveDeckImages(
   cards: Card[],
   onProgress: (cards: Card[]) => void,
   alive: () => boolean = () => true,
 ): Promise<void> {
   let next = cards
+  // Phase 1: Fehlende Bilder auflösen
   for (let i = 0; i < next.length; i++) {
     if (!alive()) return
     const c = next[i]
@@ -129,6 +157,22 @@ export async function resolveDeckImages(
     if (api) {
       const img = 'https://images.pokemontcg.io/' + api + '.png'
       next = next.map((x, j) => (j === i ? { ...x, api, img } : x))
+      onProgress(next)
+    }
+    await new Promise((r) => setTimeout(r, 150))
+  }
+  // Phase 2: Basis-Status für Pokémon ohne b-Flag auflösen
+  for (let i = 0; i < next.length; i++) {
+    if (!alive()) return
+    const c = next[i]
+    if (c.t !== 'P' || c.b !== undefined) continue
+    const api = c.api
+    if (!api) continue
+    const basic = await resolveBasicStatus(api)
+    if (!alive()) return
+    if (basic !== null) {
+      const b = basic ? 1 : 0
+      next = next.map((x, j) => (j === i ? { ...x, b } : x))
       onProgress(next)
     }
     await new Promise((r) => setTimeout(r, 150))

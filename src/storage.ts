@@ -9,6 +9,7 @@ interface StoredDeck {
   name: string
   format: string
   cards: CardInput[]
+  archetype?: string
 }
 
 export function loadHistory(): Round[] {
@@ -33,7 +34,7 @@ export function loadDecks(): Deck[] {
   try {
     const raw = JSON.parse(localStorage.getItem(DECKS_KEY) || 'null') as StoredDeck[] | null
     if (Array.isArray(raw) && raw.length) {
-      return raw.map((d) => ({ ...d, cards: cardsOf(d.cards) }))
+      return raw.map((d) => ({ ...d, archetype: d.archetype, cards: cardsOf(d.cards) }))
     }
   } catch {
     /* ignore */
@@ -47,6 +48,7 @@ export function saveDecks(decks: Deck[]): void {
       id: d.id,
       name: d.name,
       format: d.format,
+      archetype: d.archetype,
       cards: d.cards.map(({ n, s, c, api, t, q, b }) => ({ n, s, c, api, t, q, b })),
     }))
     localStorage.setItem(DECKS_KEY, JSON.stringify(raw))

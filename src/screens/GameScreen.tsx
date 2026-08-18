@@ -148,10 +148,10 @@ export function GameScreen({ game, dark, onChange, onQuit, onConfirm }: Props) {
           padding: '8px 18px 14px',
         }}
       >
-        <TabBtn active={tab === 'table'} icon="🂠" onClick={() => setTab('table')}>
+        <TabBtn active={tab === 'table'} onClick={() => setTab('table')}>
           Tisch
         </TabBtn>
-        <TabBtn active={tab === 'list'} icon="☑" onClick={() => setTab('list')}>
+        <TabBtn active={tab === 'list'} onClick={() => setTab('list')}>
           Deckliste · {selTotal}/6
         </TabBtn>
       </div>
@@ -162,12 +162,10 @@ export function GameScreen({ game, dark, onChange, onQuit, onConfirm }: Props) {
 
 function TabBtn({
   active,
-  icon,
   onClick,
   children,
 }: {
   active: boolean
-  icon: string
   onClick: () => void
   children: React.ReactNode
 }) {
@@ -176,21 +174,18 @@ function TabBtn({
       onClick={onClick}
       style={{
         flex: 1,
-        height: 50,
+        height: 44,
         border: 'none',
-        borderRadius: 14,
-        fontWeight: 700,
+        borderRadius: 10,
+        fontWeight: 600,
         fontSize: 14,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
         background: active ? 'var(--accentSoft)' : 'var(--panel)',
         color: active ? 'var(--accentInk)' : 'var(--sub)',
-        boxShadow: active ? 'inset 0 0 0 2px var(--accentInk)' : 'none',
       }}
     >
-      <span style={{ fontSize: 17 }}>{icon}</span>
       {children}
     </button>
   )
@@ -313,8 +308,7 @@ function TableTab({
               position: 'relative',
               overflow: 'hidden',
               background: 'var(--slot)',
-              border: '2.5px solid var(--accentInk)',
-              boxShadow: '0 4px 12px rgba(79,195,247,.45)',
+              border: '2px solid var(--accentInk)',
             }}
           >
             <CardFace img={game.active.img} fallbackImg={game.active.fallbackImg} name={game.active.n} radius={9} fontSize={8} />
@@ -364,6 +358,11 @@ function TableTab({
             {deckIdx1} / {N}
           </span>
         </div>
+
+        {/* Raised-Cards-Shelf: angehobene Karten gruppiert als Mini-Thumbnails */}
+        {raisedCount > 0 && (
+          <RaisedShelf rest={game.rest} raised={raised} onJump={setFanPos} />
+        )}
 
         <div
           onPointerDown={fanDown}
@@ -415,9 +414,9 @@ function TableTab({
                     height: '100%',
                     borderRadius: 12,
                     overflow: 'hidden',
-                    border: `2.5px solid ${up ? 'var(--accentInk)' : 'var(--surface)'}`,
+                    border: `2px solid ${up ? 'var(--accentInk)' : 'var(--surface)'}`,
                     boxShadow: up
-                      ? '0 10px 22px rgba(79,195,247,.55), 0 0 0 3px rgba(79,195,247,.35)'
+                      ? '0 4px 12px rgba(0,0,0,.15)'
                       : 'var(--shadow)',
                   }}
                 >
@@ -436,7 +435,7 @@ function TableTab({
           style={{
             position: 'relative',
             flex: 'none',
-            height: 34,
+            height: 50,
             margin: '4px 2px 0',
             borderRadius: 999,
             background: 'var(--panel)',
@@ -449,7 +448,7 @@ function TableTab({
           <div
             style={{
               position: 'absolute',
-              inset: '9px 10px',
+              inset: '13px 10px',
               pointerEvents: 'none',
               backgroundImage: `repeating-linear-gradient(90deg, var(--line) 0, var(--line) 1.5px, transparent 1.5px, transparent ${(
                 100 / Math.max(N, 1)
@@ -459,13 +458,12 @@ function TableTab({
           <div
             style={{
               position: 'absolute',
-              top: 4,
-              left: `calc((100% - 66px) * ${frac.toFixed(4)} + 4px)`,
-              width: 58,
-              height: 26,
+              top: 8,
+              left: `calc((100% - 72px) * ${frac.toFixed(4)} + 6px)`,
+              width: 60,
+              height: 34,
               borderRadius: 999,
-              background: 'linear-gradient(150deg, var(--accent), #2E9FD8)',
-              boxShadow: '0 3px 9px rgba(46,159,216,.5)',
+              background: 'var(--accentInk)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -579,22 +577,22 @@ function ListTab({
           borderTop: '1px solid var(--line)',
         }}
       >
-        <div style={{ fontSize: 14, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
-          Ausgewählt: <span style={{ color: 'var(--accentInk)' }}>{selTotal} / 6</span>
+        <div style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+          {selTotal} / 6
         </div>
         <button
           onClick={onConfirm}
           disabled={!canConfirm}
           style={{
             flex: 1,
-            height: 50,
+            height: 44,
             border: 'none',
-            borderRadius: 15,
-            background: 'linear-gradient(150deg, var(--accent), #2E9FD8)',
-            color: '#fff',
-            fontSize: 15,
-            fontWeight: 700,
-            opacity: canConfirm ? 1 : 0.45,
+            borderRadius: 10,
+            background: 'var(--accent)',
+            color: '#06323f',
+            fontSize: 14,
+            fontWeight: 600,
+            opacity: canConfirm ? 1 : 0.4,
           }}
         >
           Bestätigen
@@ -617,5 +615,77 @@ function Label({ color, children }: { color: string; children: React.ReactNode }
     >
       {children}
     </span>
+  )
+}
+
+// Mini-Thumbnails der angehobenen Karten, gruppiert nach Kartentyp.
+// Zeigt z. B. "2/4" = 2 von 4 Kopien angehoben. Tipp scrollt zum Kartenindex.
+function RaisedShelf({
+  rest,
+  raised,
+  onJump,
+}: {
+  rest: import('../game').Card[]
+  raised: Record<number, boolean>
+  onJump: (idx: number) => void
+}) {
+  const groups = new Map<string, { card: import('../game').Card; count: number; firstIdx: number }>()
+  for (const [idx, up] of Object.entries(raised)) {
+    if (!up) continue
+    const i = +idx
+    const c = rest[i]
+    if (!c) continue
+    const g = groups.get(c.key)
+    if (g) g.count++
+    else groups.set(c.key, { card: c, count: 1, firstIdx: i })
+  }
+  if (!groups.size) return null
+  return (
+    <div
+      style={{
+        display: 'flex',
+        gap: 5,
+        padding: '2px 0',
+        overflowX: 'auto',
+        flexShrink: 0,
+      }}
+    >
+      {[...groups.values()].map(({ card, count, firstIdx }) => (
+        <button
+          key={card.key}
+          onClick={() => onJump(firstIdx)}
+          style={{
+            flex: 'none',
+            width: 32,
+            height: 45,
+            borderRadius: 6,
+            border: '1.5px solid var(--accentInk)',
+            padding: 0,
+            position: 'relative',
+            overflow: 'hidden',
+            background: 'var(--slot)',
+          }}
+        >
+          <CardFace img={card.img} fallbackImg={card.fallbackImg} name={card.n.split(' ')[0]} radius={6} fontSize={5} />
+          <span
+            style={{
+              position: 'absolute',
+              bottom: 1,
+              right: 1,
+              fontSize: 7.5,
+              fontWeight: 800,
+              color: '#fff',
+              background: 'var(--accentInk)',
+              padding: '1px 3px',
+              borderRadius: 4,
+              lineHeight: 1,
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {count}/{card.q}
+          </span>
+        </button>
+      ))}
+    </div>
   )
 }

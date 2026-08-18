@@ -22,6 +22,7 @@ export interface Deck {
   name: string
   format: string
   cards: Card[]
+  archetype?: string // Manueller Override für das Haupt-Pokémon (Hintergrund/Icon)
 }
 
 export interface Round {
@@ -202,8 +203,26 @@ export function deal(deck: Deck): GameState {
     const j = Math.floor(Math.random() * (i + 1))
     ;[inst[i], inst[j]] = [inst[j], inst[i]]
   }
-  let cand = inst.map((c, i) => (c.b ? i : -1)).filter((i) => i >= 0)
+  // 1. Bestätigte Basis-Pokémon (b === 1, z. B. via API aufgelöst)
+  let cand = inst.map((c, i) => (c.b === 1 ? i : -1)).filter((i) => i >= 0)
+  if (!cand.length) {
+    // 2. Heuristik: Pokémon, keine bestätigten Nicht-Basis, kein "Mega "-Präfix,
+    //    bevorzugt höchste Kopienanzahl (Basis-Pokémon sind typischerweise 4×)
+    const pokemon = inst
+      .map((c, i) =>
+        c.t === 'P' && c.b !== 0 && !c.n.startsWith('Mega ')
+          ? { i, q: c.q }
+          : null,
+      )
+      .filter((x): x is { i: number; q: number } => x !== null)
+    if (pokemon.length) {
+      const maxQ = Math.max(...pokemon.map((p) => p.q))
+      cand = pokemon.filter((p) => p.q === maxQ).map((p) => p.i)
+    }
+  }
+  // 3. Irgendein Pokémon
   if (!cand.length) cand = inst.map((c, i) => (c.t === 'P' ? i : -1)).filter((i) => i >= 0)
+  // 4. Irgendeine Karte
   if (!cand.length) cand = inst.map((_, i) => i)
   const active = inst.splice(cand[Math.floor(Math.random() * cand.length)], 1)[0]
   const hand = inst.slice(0, 7)
@@ -236,8 +255,6 @@ export interface Result {
   hits: number
   rows: RevealRow[]
   deck: Deck
-  stars: number
-  xp: number
 }
 
 // Auswahl gegen die tatsächlichen Preise auswerten.
@@ -266,80 +283,7 @@ export function score(g: GameState): Result {
       return { name: c.n, img: c.img, fallbackImg: c.fallbackImg, picked: p, actual: a, st }
     })
     .sort((x, y) => order[x.st] - order[y.st])
-  const stars = starsFor(hits, time)
-  const xp = earnXp({ h: hits, t: time })
-  return { time, hits, rows, deck: g.deck, stars, xp }
-}
-
-// --- Fortschritt / Gamification ---
-
-// XP einer Runde: Treffer stark gewichtet, Zeitbonus für < 45s.
-export function earnXp(r: { h: number; t: number }): number {
-  return Math.round(r.h * 120 + Math.max(0, 45 - r.t) * 4)
-}
-
-// Sterne (0..3): 6 Treffer perfekt (3 bei ≤ 30s, sonst 2), sonst nach Treffern.
-export function starsFor(h: number, t: number): number {
-  return h >= 6 ? (t <= 30 ? 3 : 2) : h >= 4 ? 2 : h >= 2 ? 1 : 0
-}
-
-const RANKS = [
-  'Rookie',
-  'Prize Scout',
-  'Deck Reader',
-  'Prize Hunter',
-  'Sharp Eye',
-  'Prize Master',
-  'Grand Master',
-]
-
-export function rankFor(level: number): string {
-  return RANKS[Math.min(RANKS.length - 1, level - 1)]
-}
-
-const XP_PER_LEVEL = 600
-
-export interface Progress {
-  totalXp: number
-  level: number
-  rank: string
-  levelPct: number // 0..100
-  xpInLevel: number
-  streakDays: number
-}
-
-export function progressOf(history: Round[]): Progress {
-  const totalXp = history.reduce((a, r) => a + earnXp(r), 0)
-  const level = Math.floor(totalXp / XP_PER_LEVEL) + 1
-  const xpInLevel = totalXp % XP_PER_LEVEL
-  return {
-    totalXp,
-    level,
-    rank: rankFor(level),
-    levelPct: (xpInLevel / XP_PER_LEVEL) * 100,
-    xpInLevel,
-    streakDays: dayStreak(history),
-  }
-}
-
-// Aufeinanderfolgende Tage (bis heute/gestern) mit mindestens einer Runde.
-export function dayStreak(history: Round[]): number {
-  if (!history.length) return 0
-  const key = (d: Date) => d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate()
-  const days = [...new Set(history.map((r) => key(new Date(r.ts))))].sort().reverse()
-  const cur = new Date()
-  if (days[0] !== key(cur)) {
-    cur.setDate(cur.getDate() - 1)
-    if (days[0] !== key(cur)) return days.length ? 1 : 0
-  }
-  let streak = 0
-  for (const d of days) {
-    if (d === key(cur)) {
-      streak++
-      cur.setDate(cur.getDate() - 1)
-    } else break
-  }
-  return streak
+  return { time, hits, rows, deck: g.deck }
 }
 
 // --- Deck-abhängiges Aussehen ---
@@ -352,9 +296,21 @@ export function hueOf(str: string): number {
   return h
 }
 
-// Haupt-Pokémon eines Decks (bevorzugt ein "ex"), Basis für Bild & Farbe.
+// Haupt-Pokémon eines Decks (Archetype), Basis für Hintergrund & Farbe.
+// Priorisiert: manueller Override > Mega ex > reguläres ex > erstes Pokémon.
 export function starCard(deck: Deck): Card {
-  return deck.cards.find((c) => /ex$/.test(c.n)) || deck.cards[0]
+  if (deck.archetype) {
+    const found = deck.cards.find((c) => c.n === deck.archetype)
+    if (found) return found
+  }
+  const pokemon = deck.cards.filter((c) => c.t === 'P')
+  const exCards = pokemon.filter((c) => /\bex$/i.test(c.n))
+  if (exCards.length) {
+    const mega = exCards.filter((c) => c.n.startsWith('Mega '))
+    const pool = mega.length ? mega : exCards
+    return pool.reduce((a, b) => (a.q >= b.q ? a : b))
+  }
+  return pokemon[0] || deck.cards[0]
 }
 
 export interface ParseResult {

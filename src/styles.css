@@ -22,10 +22,10 @@ button {
   cursor: pointer;
 }
 
-@keyframes cardIn {
+@keyframes rise {
   from {
     opacity: 0;
-    transform: translateX(24px) rotate(1.5deg);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -35,92 +35,41 @@ button {
 @keyframes popIn {
   from {
     opacity: 0;
-    transform: scale(0.92);
+    transform: scale(0.95);
   }
   to {
     opacity: 1;
     transform: none;
-  }
-}
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes starPop {
-  0% {
-    opacity: 0;
-    transform: scale(0) rotate(-40deg);
-  }
-  60% {
-    transform: scale(1.25) rotate(6deg);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(0);
-  }
-}
-@keyframes confFall {
-  0% {
-    opacity: 1;
-    transform: translateY(-20px) rotate(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(420px) rotate(540deg);
-  }
-}
-@keyframes badgePulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.06);
-  }
-}
-@keyframes flameFlick {
-  0%,
-  100% {
-    transform: scale(1) rotate(-2deg);
-  }
-  50% {
-    transform: scale(1.12) rotate(2deg);
   }
 }
 
 .pc {
   --bg: #f1faf2;
   --panel: #e2f3e6;
-  --surface: #ffffff;
+  --surface: #f7fbf8;
   --ink: #0e2a32;
   --sub: #64837b;
-  --line: rgba(14, 42, 50, 0.09);
+  --line: rgba(14, 42, 50, 0.08);
   --accent: #4fc3f7;
-  --accentSoft: #d9f1fc;
+  --accentSoft: #e3f4fc;
   --accentInk: #0b5a7a;
   --good: #2fbf71;
-  --bad: #f0564f;
-  --warn: #f5a623;
-  --shadow: 0 10px 26px rgba(14, 42, 50, 0.1);
-  --slot: #b7e7fa;
+  --bad: #e04940;
+  --warn: #e8a020;
+  --shadow: 0 1px 3px rgba(14, 42, 50, 0.06);
+  --slot: #c4e8f5;
 }
 
 .pc.dark {
   --bg: #0c1613;
   --panel: #122019;
-  --surface: #17251f;
+  --surface: #1a2b24;
   --ink: #eaf6f0;
   --sub: #8ba79c;
-  --line: rgba(234, 246, 240, 0.1);
+  --line: rgba(234, 246, 240, 0.08);
   --accentSoft: #0f2c3a;
   --accentInk: #8fdcff;
-  --shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  --shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
   --slot: #155a78;
 }
 
@@ -158,8 +107,8 @@ button {
     min-height: 0;
     height: 900px;
     max-height: calc(100vh - 48px);
-    border-radius: 34px;
-    box-shadow: 0 30px 80px rgba(14, 42, 50, 0.28);
+    border-radius: 24px;
+    box-shadow: 0 16px 48px rgba(14, 42, 50, 0.18);
   }
 }
 
@@ -177,11 +126,11 @@ a {
 
 .btn {
   border: none;
-  border-radius: 999px;
-  font-weight: 700;
-  font-size: 15px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
   padding: 12px 20px;
-  transition: transform 0.12s ease, opacity 0.12s ease;
+  transition: transform 0.1s ease, opacity 0.1s ease;
 }
 .btn:active {
   transform: scale(0.97);

@@ -1,85 +1,6 @@
-import { type Deck, type Round, fmt, isDeckFree, progressOf } from '../game'
+import { type Deck, type Round, fmt, isDeckFree, starCard } from '../game'
 import { CardFace } from '../CardFace'
 import { NavBar } from './NavBar'
-
-function ProgressHeader({ history }: { history: Round[] }) {
-  const p = progressOf(history)
-  return (
-    <div
-      style={{
-        borderRadius: 20,
-        padding: '16px 18px',
-        marginBottom: 14,
-        background: 'linear-gradient(135deg, var(--accentInk), #2E9FD8)',
-        color: '#eaf7ff',
-        boxShadow: 'var(--shadow)',
-        animation: 'rise .35s ease both',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div
-          style={{
-            width: 46,
-            height: 46,
-            borderRadius: 14,
-            flexShrink: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(255,255,255,.16)',
-            border: '1px solid rgba(255,255,255,.25)',
-          }}
-        >
-          <span style={{ fontSize: 9, opacity: 0.8, lineHeight: 1 }}>LVL</span>
-          <span style={{ fontSize: 20, fontWeight: 800, lineHeight: 1.1 }}>{p.level}</span>
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15.5, fontWeight: 800 }}>{p.rank}</div>
-          <div style={{ fontSize: 12, opacity: 0.85 }}>
-            {p.xpInLevel} / 600 XP
-          </div>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 5,
-            fontSize: 14,
-            fontWeight: 800,
-            padding: '6px 10px',
-            borderRadius: 999,
-            background: 'rgba(255,255,255,.16)',
-          }}
-        >
-          <span style={{ animation: 'flameFlick 1.4s ease-in-out infinite', display: 'inline-block' }}>
-            🔥
-          </span>
-          {p.streakDays}
-        </div>
-      </div>
-      <div
-        style={{
-          marginTop: 12,
-          height: 8,
-          borderRadius: 999,
-          background: 'rgba(255,255,255,.22)',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            width: p.levelPct + '%',
-            height: '100%',
-            borderRadius: 999,
-            background: '#eaf7ff',
-            transition: 'width .5s ease',
-          }}
-        />
-      </div>
-    </div>
-  )
-}
 
 interface Props {
   decks: Deck[]
@@ -97,7 +18,7 @@ export function Home({ decks, history, premium, onMenu, onPlay, onImport, onStat
       <header
         style={{
           display: 'flex',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           justifyContent: 'space-between',
           padding: '20px 20px 12px',
           position: 'sticky',
@@ -106,30 +27,28 @@ export function Home({ decks, history, premium, onMenu, onPlay, onImport, onStat
           background: 'var(--bg)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-          <img src="/icon.svg" alt="Prized" width={40} height={40} style={{ borderRadius: 11, flexShrink: 0 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <img src="/icon.svg" alt="Prized" width={36} height={36} style={{ borderRadius: 10, flexShrink: 0 }} />
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, color: 'var(--ink)' }}>
-              Prized
-            </h1>
-            <p style={{ margin: '2px 0 0', color: 'var(--sub)', fontSize: 13.5 }}>
-              Trainiere dein Preis-Gespür
-            </p>
+            <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: 'var(--ink)' }}>Prized</h1>
+            <p style={{ margin: 0, color: 'var(--sub)', fontSize: 12 }}>Trainiere dein Preis-Gespür</p>
           </div>
         </div>
         <button
           className="btn btn-ghost"
           onClick={onMenu}
-          style={{ fontSize: 22, padding: 8, color: 'var(--ink)' }}
           aria-label="Menü öffnen"
+          style={{ padding: 8, color: 'var(--ink)' }}
         >
-          ☰
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="3" y1="5" x2="17" y2="5" />
+            <line x1="3" y1="10" x2="17" y2="10" />
+            <line x1="3" y1="15" x2="17" y2="15" />
+          </svg>
         </button>
       </header>
 
       <div className="pc-scroll" style={{ padding: '4px 16px 20px' }}>
-        <ProgressHeader history={history} />
-
         {decks.map((d) => (
           <DeckTile
             key={d.id}
@@ -140,24 +59,22 @@ export function Home({ decks, history, premium, onMenu, onPlay, onImport, onStat
           />
         ))}
 
-        <div style={{ marginTop: 6 }}>
-          <button
-            onClick={onImport}
-            style={{
-              width: '100%',
-              padding: '18px',
-              borderRadius: 18,
-              border: 'none',
-              background: 'linear-gradient(140deg, #5FD0FF, #2E9FD8 55%, #1B7FB8)',
-              color: '#06323f',
-              fontWeight: 800,
-              fontSize: 15,
-              boxShadow: '0 6px 16px rgba(27,127,184,.3)',
-            }}
-          >
-            ⬇ Deck importieren
-          </button>
-        </div>
+        <button
+          onClick={onImport}
+          style={{
+            width: '100%',
+            padding: 16,
+            marginTop: 4,
+            borderRadius: 12,
+            border: '1.5px dashed var(--line)',
+            background: 'transparent',
+            color: 'var(--accentInk)',
+            fontWeight: 600,
+            fontSize: 14,
+          }}
+        >
+          + Deck importieren
+        </button>
       </div>
 
       <NavBar active="decks" onDecks={() => {}} onStats={onStats} />
@@ -181,39 +98,43 @@ function DeckTile({
   const acc = rounds.length
     ? Math.round((rounds.reduce((a, r) => a + r.h, 0) / rounds.length / 6) * 100)
     : null
-  const star = deck.cards.find((c) => /ex$/.test(c.n)) || deck.cards[0]
+  const star = starCard(deck)
 
   return (
-    <div
+    <button
+      onClick={onPlay}
+      disabled={locked}
       style={{
+        width: '100%',
         display: 'flex',
-        gap: 14,
+        gap: 12,
         alignItems: 'center',
         background: 'var(--surface)',
-        borderRadius: 20,
-        padding: 14,
-        marginBottom: 12,
-        boxShadow: 'var(--shadow)',
-        animation: 'rise .35s ease both',
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 8,
+        border: 'none',
+        textAlign: 'left',
+        opacity: locked ? 0.55 : 1,
       }}
     >
       <div
         style={{
           position: 'relative',
-          width: 62,
-          height: 86,
-          borderRadius: 12,
+          width: 52,
+          height: 72,
+          borderRadius: 8,
           flexShrink: 0,
           overflow: 'hidden',
         }}
       >
-        <CardFace img={star.img} fallbackImg={star.fallbackImg} name={star.n} radius={12} fontSize={10} />
+        <CardFace img={star.img} fallbackImg={star.fallbackImg} name={star.n} radius={8} fontSize={9} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span
             style={{
-              fontSize: 17,
+              fontSize: 16,
               fontWeight: 700,
               color: 'var(--ink)',
               overflow: 'hidden',
@@ -223,67 +144,21 @@ function DeckTile({
           >
             {deck.name}
           </span>
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: 'var(--accentInk)',
-              background: 'var(--accentSoft)',
-              padding: '2px 8px',
-              borderRadius: 999,
-            }}
-          >
-            {deck.format}
-          </span>
           {locked && (
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'var(--sub)',
-                background: 'var(--line)',
-                padding: '2px 8px',
-                borderRadius: 999,
-                marginLeft: 'auto',
-              }}
-            >
-              🔒 Premium
+            <span style={{ fontSize: 12, color: 'var(--sub)' }}>
+              Premium
             </span>
           )}
         </div>
-        <p style={{ margin: '4px 0 10px', fontSize: 12.5, color: 'var(--sub)' }}>
-          Best {best != null ? fmt(best) : '—'} · {acc != null ? acc + '%' : '—'} Genau. ·{' '}
-          {rounds.length} Runden
+        <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--sub)' }}>
+          {best != null ? `${fmt(best)} best` : 'Noch nicht gespielt'}
+          {acc != null ? ` · ${acc}% Genau.` : ''}
+          {rounds.length > 0 ? ` · ${rounds.length} Runden` : ''}
         </p>
-        <button
-          onClick={onPlay}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 7,
-            border: 'none',
-            borderRadius: 999,
-            padding: '9px 20px',
-            fontSize: 14,
-            fontWeight: 800,
-            color: locked ? 'var(--ink)' : '#06323f',
-            background: locked
-              ? 'var(--accentSoft)'
-              : 'linear-gradient(140deg, #5FD0FF, #2E9FD8 55%, #1B7FB8)',
-            boxShadow: locked ? 'none' : '0 6px 16px rgba(27,127,184,.35)',
-          }}
-        >
-          {locked ? (
-            <>
-              <span style={{ fontSize: 12 }}>🔒</span> Freischalten
-            </>
-          ) : (
-            <>
-              <span style={{ fontSize: 11 }}>▶</span> Spielen
-            </>
-          )}
-        </button>
       </div>
-    </div>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style={{ flexShrink: 0, color: 'var(--sub)' }}>
+        <path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </button>
   )
 }

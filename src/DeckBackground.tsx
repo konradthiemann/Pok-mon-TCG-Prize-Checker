@@ -31,13 +31,15 @@ interface BgData {
 const cache = new Map<string, BgData>()
 const inflight = new Map<string, Promise<BgData>>()
 
-// Kartennamen ("Dragapult ex", "Raging Bolt ex") auf den PokéAPI-Speziesnamen
-// abbilden ("dragapult", "raging-bolt").
+// Kartennamen ("Dragapult ex", "Mega Excadrill ex") auf den PokéAPI-Speziesnamen
+// abbilden ("dragapult", "excadrill"). "Mega "-Präfix wird entfernt, da PokeAPI
+// die Basisspezies verwendet.
 function speciesOf(name: string): string {
   return name
     .toLowerCase()
     .replace(/\b(ex|gx|v|vmax|vstar|v-union|break|prime)\b/g, ' ')
-    .replace(/[.'’:]/g, '')
+    .replace(/^mega\s+/, '')
+    .replace(/[.'':\u2018\u2019]/g, '')
     .trim()
     .replace(/\s+/g, '-')
 }
@@ -52,6 +54,16 @@ async function fetchBg(species: string): Promise<BgData> {
     if (pRes.ok) {
       const p = await pRes.json()
       sprite = p?.sprites?.front_default ?? null
+    }
+    // Fallback: limitlesstcg-Sprite (41×34 Pixel-Art, guter TCG-Abgleich)
+    if (!sprite) {
+      const ltcg = `https://r2.limitlesstcg.net/pokemon/gen9/${species}.png`
+      try {
+        const r = await fetch(ltcg, { method: 'HEAD' })
+        if (r.ok) sprite = ltcg
+      } catch {
+        /* ignore */
+      }
     }
     let hue: number | null = null
     let sat: number | null = null
