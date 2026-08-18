@@ -119,6 +119,11 @@ export function Reveal({ result, onPlayAgain, onHome, onStats }: Props) {
           gap: 8,
           padding: '12px 16px 16px',
           borderTop: '1px solid var(--line)',
+          position: 'sticky',
+          bottom: 0,
+          background: 'var(--bg)',
+          flexShrink: 0,
+          zIndex: 10,
         }}
       >
         <button className="btn btn-primary" onClick={onPlayAgain} style={{ flex: 1, padding: 14 }}>
