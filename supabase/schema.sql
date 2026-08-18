@@ -9,6 +9,7 @@ create table if not exists public.decks (
   name       text        not null,
   format     text        not null default 'Standard',
   cards      jsonb       not null default '[]'::jsonb,
+  archetype  text,
   created_at timestamptz not null default now(),
   primary key (user_id, id)
 );

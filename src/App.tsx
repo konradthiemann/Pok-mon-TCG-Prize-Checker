@@ -6,7 +6,7 @@ import {
   type Round,
   cardsOf,
   deal,
-  isDeckFree,
+  isDemoDeck,
   parseImport,
   score,
 } from './game'
@@ -58,8 +58,9 @@ export function App() {
   const [history, setHistory] = useState<Round[]>(() => loadHistory())
   const [game, setGame] = useState<GameState | null>(null)
   const [result, setResult] = useState<Result | null>(null)
-  // Community-Test: aktuell alles kostenlos, Paywall deaktiviert. Zahlung folgt später.
-  const [premium] = useState(true)
+  // Gast: Demo-Decks frei spielbar, importierte Decks brauchen Account.
+  // Eingeloggt: alles spielbar. Premium/Paywall kommt später.
+  const loggedIn = configured && !!user
 
   // Aktueller Speicherort: Cloud, sobald ein User eingeloggt ist, sonst localStorage.
   const cloud = configured && !!user
@@ -143,9 +144,9 @@ export function App() {
   }
 
   const startGame = (deck: Deck) => {
-    // Nur Demo-Decks sind ohne Premium spielbar; sonst Paywall.
-    if (!premium && !isDeckFree(deck)) {
-      setScreen('paywall')
+    // Gäste dürfen nur Demo-Decks spielen; importierte Decks → Login.
+    if (!loggedIn && !isDemoDeck(deck)) {
+      setScreen('login')
       return
     }
     setResult(null)
@@ -214,7 +215,7 @@ export function App() {
     <Home
       decks={decks}
       history={history}
-      premium={premium}
+      loggedIn={loggedIn}
       onMenu={() => setMenuOpen(true)}
       onPlay={startGame}
       onImport={() => setScreen('import')}
@@ -277,7 +278,7 @@ export function App() {
       case 'agb':
         return <Legal doc={screen} onBack={() => setScreen('home')} />
     }
-  }, [screen, decks, history, theme, game, result, premium, user])
+  }, [screen, decks, history, theme, game, result, loggedIn, user])
 
   return (
     <div className={`pc-root ${theme === 'dark' ? 'dark' : ''}`}>

@@ -13,8 +13,6 @@ const TITLES: Record<LegalDoc, string> = {
   agb: 'Nutzungsbedingungen',
 }
 
-// Kontaktdaten für Impressum/Datenschutz. Adresse bitte vor dem Live-Gang
-// vervollständigen (Pflichtangabe nach § 5 DDG).
 const OPERATOR = {
   name: 'Konrad Thiemann',
   street: '[Straße und Hausnummer]',
@@ -29,12 +27,14 @@ export function Legal({ doc, onBack }: Props) {
         <button
           className="btn btn-ghost"
           onClick={onBack}
-          style={{ fontSize: 22, padding: '4px 10px', color: 'var(--ink)' }}
+          style={{ padding: '4px 10px', color: 'var(--ink)' }}
           aria-label="Zurück"
         >
-          ‹
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10 3L5 8l5 5" />
+          </svg>
         </button>
-        <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, color: 'var(--ink)' }}>
+        <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: 'var(--ink)' }}>
           {TITLES[doc]}
         </h1>
       </header>
@@ -51,7 +51,7 @@ export function Legal({ doc, onBack }: Props) {
 
 function H({ children }: { children: ReactNode }) {
   return (
-    <h2 style={{ fontSize: 16, fontWeight: 800, margin: '22px 0 8px', color: 'var(--ink)' }}>
+    <h2 style={{ fontSize: 16, fontWeight: 700, margin: '20px 0 6px', color: 'var(--ink)' }}>
       {children}
     </h2>
   )
@@ -117,31 +117,48 @@ function Datenschutz() {
 
       <H>Lokale Speicherung (ohne Konto)</H>
       <P>
-        Ohne Anmeldung läuft Prized vollständig in deinem Browser. Deine Decks, dein Spielverlauf
-        und Einstellungen werden ausschließlich lokal per <em>localStorage</em> auf deinem Gerät
-        gespeichert. Diese Daten verlassen dein Gerät nicht und werden nicht an uns übertragen. Du
-        kannst sie jederzeit über die Browser-Einstellungen löschen.
+        Ohne Anmeldung läuft Prized eingeschränkt in deinem Browser. Demo-Decks, Einstellungen und
+        temporär importierte Decklisten werden ausschließlich lokal per <em>localStorage</em> auf
+        deinem Gerät gespeichert. Diese Daten verlassen dein Gerät nicht. Du kannst sie jederzeit
+        über die Browser-Einstellungen löschen.
       </P>
 
-      <H>Konto & Cloud-Synchronisation (optional)</H>
+      <H>Konto & Datenbank-Speicherung</H>
       <P>
-        Meldest du dich freiwillig an, werden deine E-Mail-Adresse sowie deine Decks und dein
-        Spielverlauf bei unserem Dienstleister Supabase gespeichert, damit du sie geräteübergreifend
-        nutzen kannst. Rechtsgrundlage ist die Erfüllung des Nutzungsvertrags (Art. 6 Abs. 1 lit. b
-        DSGVO). Du kannst dein Konto und die zugehörigen Daten jederzeit in den Kontoeinstellungen
-        löschen.
+        Meldest du dich an, werden folgende Daten bei unserem Dienstleister Supabase (Supabase Inc.,
+        USA; Serverstandort je nach Projektkonfiguration) gespeichert:
+      </P>
+      <ul style={{ margin: '0 0 10px', paddingLeft: 20, fontSize: 14, lineHeight: 1.6, color: 'var(--sub)' }}>
+        <li>Deine <strong>E-Mail-Adresse</strong> zur Authentifizierung.</li>
+        <li>Deine <strong>importierten Decklisten</strong> (Kartennamen, Set-Kürzel, Mengen) — pro Benutzer gespeichert, nur für dich sichtbar.</li>
+        <li>Dein <strong>Spielverlauf</strong> (Deck-ID, Treffer, Zeit, Zeitstempel) zur Fortschrittsverfolgung.</li>
+      </ul>
+      <P>
+        Rechtsgrundlage ist die Erfüllung des Nutzungsvertrags (Art. 6 Abs. 1 lit. b DSGVO). Die
+        Daten sind per Row Level Security (RLS) ausschließlich deinem Konto zugeordnet und für
+        andere Nutzer nicht einsehbar.
+      </P>
+
+      <H>Löschung deiner Daten</H>
+      <P>
+        Du kannst dein Konto und alle zugehörigen Daten (Decks, Spielverlauf) jederzeit in den
+        Kontoeinstellungen löschen. Die Löschung erfolgt unwiderruflich — eine Wiederherstellung
+        ist nicht möglich. Bei Löschung des Kontos werden auch alle verknüpften Datenbankeinträge
+        automatisch entfernt (ON DELETE CASCADE).
       </P>
 
       <H>Kartenbilder von Drittanbietern</H>
       <P>
-        Kartenbilder werden von <em>images.pokemontcg.io</em> (pokemontcg.io) geladen. Dabei wird
-        deine IP-Adresse technisch bedingt an diesen Anbieter übertragen. Rechtsgrundlage ist unser
+        Kartenbilder werden von <em>images.pokemontcg.io</em> und als Fallback von{' '}
+        <em>limitlesstcg.nyc3.cdn.digitaloceanspaces.com</em> geladen. Deck-Hintergrundgrafiken
+        stammen von <em>pokeapi.co</em> und <em>r2.limitlesstcg.net</em>. Dabei wird deine
+        IP-Adresse technisch bedingt an diese Anbieter übertragen. Rechtsgrundlage ist unser
         berechtigtes Interesse an der Darstellung der Karten (Art. 6 Abs. 1 lit. f DSGVO).
       </P>
 
       <H>Schriftarten</H>
       <P>
-        Prized bindet die Schriftart „Sora“ über Google Fonts (fonts.googleapis.com /
+        Prized bindet die Schriftart „Sora" über Google Fonts (fonts.googleapis.com /
         fonts.gstatic.com) ein. Dabei wird deine IP-Adresse an Google übertragen. Rechtsgrundlage
         ist unser berechtigtes Interesse an einer einheitlichen Darstellung (Art. 6 Abs. 1 lit. f
         DSGVO).
@@ -149,9 +166,9 @@ function Datenschutz() {
 
       <H>Hosting</H>
       <P>
-        Die App wird bei Railway gehostet. Beim Aufruf werden technisch notwendige Server-Logs
-        (u. a. IP-Adresse, Zeitpunkt, abgerufene Ressource) verarbeitet, um den Betrieb und die
-        Sicherheit zu gewährleisten (Art. 6 Abs. 1 lit. f DSGVO).
+        Die App wird bei Railway (Railway Corp., USA) gehostet. Beim Aufruf werden technisch
+        notwendige Server-Logs (u. a. IP-Adresse, Zeitpunkt, abgerufene Ressource) verarbeitet,
+        um den Betrieb und die Sicherheit zu gewährleisten (Art. 6 Abs. 1 lit. f DSGVO).
       </P>
 
       <H>Keine Werbung, kein Tracking</H>
@@ -174,7 +191,7 @@ function Agb() {
     <>
       <H>1. Geltungsbereich</H>
       <P>
-        Diese Bedingungen gelten für die Nutzung der Web-App Prized („die App“). Mit der Nutzung
+        Diese Bedingungen gelten für die Nutzung der Web-App Prized („die App"). Mit der Nutzung
         erklärst du dich mit ihnen einverstanden.
       </P>
 
@@ -185,16 +202,21 @@ function Agb() {
         einen bestimmten Funktionsumfang besteht nicht.
       </P>
 
-      <H>3. Konto</H>
+      <H>3. Gast-Modus & Konto</H>
       <P>
-        Ein Konto ist optional. Du bist für die Geheimhaltung deiner Zugangsdaten selbst
-        verantwortlich. Wir behalten uns vor, Konten bei Missbrauch zu sperren.
+        Ohne Konto kannst du die Demo-Decks ausprobieren und Decklisten importieren. Um importierte
+        Decks zu spielen und deinen Fortschritt zu speichern, ist ein kostenloses Konto erforderlich.
+        Deine Decks und dein Spielverlauf werden dann in einer Datenbank pro Benutzer gespeichert. Du
+        bist für die Geheimhaltung deiner Zugangsdaten selbst verantwortlich. Wir behalten uns vor,
+        Konten bei Missbrauch zu sperren.
       </P>
 
-      <H>4. Premium-Funktionen</H>
+      <H>4. Datenspeicherung</H>
       <P>
-        Einige Funktionen können künftig kostenpflichtig sein. Preise und Umfang werden vor einem
-        etwaigen Kauf transparent angezeigt. Aktuell entstehen dir durch die Nutzung keine Kosten.
+        Bei der Registrierung werden deine importierten Decklisten und dein Spielverlauf in einer
+        Datenbank gespeichert und deinem Konto zugeordnet. Die Daten sind nur für dich sichtbar.
+        Du kannst dein Konto und alle zugehörigen Daten jederzeit in den Kontoeinstellungen
+        unwiderruflich löschen. Details findest du in unserer Datenschutzerklärung.
       </P>
 
       <H>5. Inhalte & geistiges Eigentum</H>
@@ -205,7 +227,7 @@ function Agb() {
 
       <H>6. Haftung</H>
       <P>
-        Die App wird „wie besehen“ und ohne Gewähr bereitgestellt. Für Schäden haften wir nur bei
+        Die App wird „wie besehen" und ohne Gewähr bereitgestellt. Für Schäden haften wir nur bei
         Vorsatz oder grober Fahrlässigkeit sowie bei Verletzung wesentlicher Vertragspflichten,
         begrenzt auf den vorhersehbaren, typischen Schaden. Die Haftung für Datenverlust ist auf den
         Aufwand beschränkt, der bei regelmäßiger Sicherung entstanden wäre.
@@ -224,12 +246,12 @@ function Disclaimer() {
   return (
     <div
       style={{
-        marginTop: 26,
-        padding: '14px 16px',
-        borderRadius: 14,
+        marginTop: 24,
+        padding: '12px 14px',
+        borderRadius: 10,
         background: 'var(--accentSoft)',
         color: 'var(--accentInk)',
-        fontSize: 12.5,
+        fontSize: 12,
         lineHeight: 1.55,
       }}
     >

@@ -141,11 +141,10 @@ export function defaultDecks(): Deck[] {
   ]
 }
 
-// Kostenlos spielbare Demo-Decks. Alle übrigen (eigene, importierte) Decks
-// benötigen Premium; das Spielen löst sonst die Paywall aus.
-export const DEMO_DECK_IDS = ['dragapult']
+// Demo-Decks: im Gast-Modus ohne Account spielbar.
+export const DEMO_DECK_IDS = ['dragapult', 'ragingbolt']
 
-export function isDeckFree(deck: Deck): boolean {
+export function isDemoDeck(deck: Deck): boolean {
   return DEMO_DECK_IDS.includes(deck.id)
 }
 

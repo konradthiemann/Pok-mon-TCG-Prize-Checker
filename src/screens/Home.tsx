@@ -1,18 +1,18 @@
-import { type Deck, type Round, fmt, isDeckFree, starCard } from '../game'
+import { type Deck, type Round, fmt, isDemoDeck, starCard } from '../game'
 import { CardFace } from '../CardFace'
 import { NavBar } from './NavBar'
 
 interface Props {
   decks: Deck[]
   history: Round[]
-  premium: boolean
+  loggedIn: boolean
   onMenu: () => void
   onPlay: (deck: Deck) => void
   onImport: () => void
   onStats: () => void
 }
 
-export function Home({ decks, history, premium, onMenu, onPlay, onImport, onStats }: Props) {
+export function Home({ decks, history, loggedIn, onMenu, onPlay, onImport, onStats }: Props) {
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       <header
@@ -54,7 +54,7 @@ export function Home({ decks, history, premium, onMenu, onPlay, onImport, onStat
             key={d.id}
             deck={d}
             history={history}
-            locked={!premium && !isDeckFree(d)}
+            locked={!loggedIn && !isDemoDeck(d)}
             onPlay={() => onPlay(d)}
           />
         ))}

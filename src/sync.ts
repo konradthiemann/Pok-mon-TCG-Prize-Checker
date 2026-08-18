@@ -9,19 +9,21 @@ interface DeckRow {
   name: string
   format: string
   cards: CardInput[]
+  archetype?: string
 }
 
 export async function cloudLoadDecks(): Promise<Deck[]> {
   if (!supabase) return []
   const { data, error } = await supabase
     .from('decks')
-    .select('id,name,format,cards')
+    .select('id,name,format,cards,archetype')
     .order('created_at')
   if (error || !data) return []
   return (data as DeckRow[]).map((d) => ({
     id: d.id,
     name: d.name,
     format: d.format,
+    archetype: d.archetype,
     cards: cardsOf(d.cards),
   }))
 }
@@ -32,7 +34,7 @@ export async function cloudUpsertDeck(userId: string, deck: Deck): Promise<void>
   await supabase
     .from('decks')
     .upsert(
-      { user_id: userId, id: deck.id, name: deck.name, format: deck.format, cards },
+      { user_id: userId, id: deck.id, name: deck.name, format: deck.format, cards, archetype: deck.archetype || null },
       { onConflict: 'user_id,id' },
     )
 }
