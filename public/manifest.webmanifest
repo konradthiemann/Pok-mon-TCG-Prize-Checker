@@ -1,18 +1,30 @@
 {
   "name": "Prized",
   "short_name": "Prized",
-  "description": "Trainiere dein Preis-Gespür im Sammelkartenspiel.",
+  "description": "Train your prize card sense — Pokémon TCG prize checking trainer.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0c1613",
   "theme_color": "#4FC3F7",
+  "categories": ["games", "entertainment"],
   "icons": [
     {
       "src": "/icon.svg",
       "sizes": "any",
-      "type": "image/svg+xml",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

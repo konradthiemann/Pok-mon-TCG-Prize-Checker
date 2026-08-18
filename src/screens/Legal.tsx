@@ -10,9 +10,9 @@ interface Props {
 
 const OPERATOR = {
   name: 'Konrad Thiemann',
-  street: '[Straße und Hausnummer]',
-  city: '[PLZ und Ort]',
-  email: 'prized@konradthiemann.de',
+  street: 'Olfermannstr. 7',
+  city: '38102 Braunschweig',
+  email: 'konrad.thiemann@gmail.com',
 }
 
 export function Legal({ doc, onBack }: Props) {
