@@ -105,15 +105,15 @@ export function App() {
     }
   }, [ready, configured, user?.id])
 
-  // Fehlende Kartenbilder bereits gespeicherter Decks nachladen (z. B. früher
-  // importierte Decks, deren Sets nicht in SETMAP stehen). Pro Deck genau einmal
-  // gestartet (auch für später aus der Cloud geladene Decks) und aktualisiert die
-  // betroffenen Decks nach und nach, damit im Spiel immer eine Vorderseite erscheint.
+  // Fehlende Kartenbilder und Basis-Status nachladen. Läuft pro Deck einmal,
+  // auch wenn alle Bilder schon da sind (Phase 2 = Basis-Status braucht API-Calls).
   const resolvingRef = useRef<Set<string>>(new Set())
   useEffect(() => {
     if (!ready) return
+    const needsWork = (d: Deck) =>
+      d.cards.some((c) => !c.api) || d.cards.some((c) => c.t === 'P' && c.b === undefined)
     const pending = decks.filter(
-      (d) => !resolvingRef.current.has(d.id) && d.cards.some((c) => !c.api),
+      (d) => !resolvingRef.current.has(d.id) && needsWork(d),
     )
     if (!pending.length) return
     const mine = pending.map((d) => d.id)
@@ -203,15 +203,17 @@ export function App() {
 
   const saveImportedDeck = (name: string, text: string) => {
     const parsed = parseImport(text)
+    const resolveDeck = (deck: Deck) => {
+      resolvingRef.current.add(deck.id)
+      void resolveDeckImages(deck.cards, (cards) => updateDeck({ ...deck, cards }))
+    }
     if (editingDeck) {
-      // Edit-Modus: bestehendes Deck aktualisieren
       const updated: Deck = { ...editingDeck, name: name.trim(), cards: cardsOf(parsed.cards) }
       updateDeck(updated)
       setEditingDeck(null)
       setScreen('home')
-      void resolveDeckImages(updated.cards, (cards) => updateDeck({ ...updated, cards }))
+      resolveDeck(updated)
     } else {
-      // Neues Deck
       const deck: Deck = {
         id: 'd' + Date.now(),
         name: name.trim(),
@@ -220,7 +222,7 @@ export function App() {
       }
       persistDeck(deck)
       setScreen('home')
-      void resolveDeckImages(deck.cards, (cards) => updateDeck({ ...deck, cards }))
+      resolveDeck(deck)
     }
   }
 
