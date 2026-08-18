@@ -32,8 +32,7 @@ export function Stats({ decks, history, onMenu, onHome }: Props) {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '20px 20px 12px',
-          position: 'sticky',
-          top: 0,
+          flexShrink: 0,
           zIndex: 20,
           background: 'var(--bg)',
         }}
