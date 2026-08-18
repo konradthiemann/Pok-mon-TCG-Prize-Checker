@@ -115,7 +115,7 @@ export function Reveal({ result, onPlayAgain, onHome, onStats }: Props) {
                     overflow: 'hidden',
                   }}
                 >
-                  <CardFace img={r.img} name={r.name} radius={8} fontSize={7} />
+                  <CardFace img={r.img} fallbackImg={r.fallbackImg} name={r.name} radius={8} fontSize={7} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div

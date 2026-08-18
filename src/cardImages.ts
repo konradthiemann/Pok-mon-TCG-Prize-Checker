@@ -12,7 +12,7 @@
 // NICHT negativ gecacht. Lässt sich nichts auflösen, bleibt der Namens-Fallback
 // in der UI (CardFace zeigt bei fehlendem/kaputtem Bild den Namen).
 
-import { type CardInput } from './game'
+import { type Card, type CardInput } from './game'
 
 const CARD_CACHE_KEY = 'pc_card_api_v3'
 const SET_CACHE_KEY = 'pc_set_id_v1'
@@ -107,4 +107,30 @@ export async function resolveCardApi(card: CardInput): Promise<string | null> {
   cache[key] = api
   saveCache(CARD_CACHE_KEY, cache)
   return api || null
+}
+
+// Füllt fehlende Bild-Pfade eines Decks nach (für Karten aus Sets, die nicht in
+// SETMAP stehen — z. B. importierte Decks). Sequenziell + gedrosselt, damit die
+// anonyme pokemontcg.io-API nicht rate-limitet. Ruft `onProgress` mit einer
+// aktualisierten Kartenliste auf, sobald ein Bild gefunden wurde, und liefert am
+// Ende die vollständige Liste. Ist `alive()` false, wird abgebrochen.
+export async function resolveDeckImages(
+  cards: Card[],
+  onProgress: (cards: Card[]) => void,
+  alive: () => boolean = () => true,
+): Promise<void> {
+  let next = cards
+  for (let i = 0; i < next.length; i++) {
+    if (!alive()) return
+    const c = next[i]
+    if (c.api) continue
+    const api = await resolveCardApi(c)
+    if (!alive()) return
+    if (api) {
+      const img = 'https://images.pokemontcg.io/' + api + '.png'
+      next = next.map((x, j) => (j === i ? { ...x, api, img } : x))
+      onProgress(next)
+    }
+    await new Promise((r) => setTimeout(r, 150))
+  }
 }

@@ -2,16 +2,22 @@ import { useState } from 'react'
 
 interface Props {
   img: string
+  fallbackImg?: string
   name: string
   radius?: number
   fontSize?: number
 }
 
 // Zeigt das Karten-Artwork; fällt bei fehlendem/kaputtem Bild auf einen
-// blauen Slot mit dem Kartennamen zurück (wie im Design).
-export function CardFace({ img, name, radius = 10, fontSize = 10 }: Props) {
+// limitlesstcg-Fallback zurück, dann auf einen blauen Slot mit dem Kartennamen.
+export function CardFace({ img, fallbackImg, name, radius = 10, fontSize = 10 }: Props) {
   const [failed, setFailed] = useState(false)
-  const showImg = img && !failed
+  const [fallbackFailed, setFallbackFailed] = useState(false)
+
+  const useFallback = (!img || failed) && fallbackImg && !fallbackFailed
+  const showImg = (img && !failed) || useFallback
+  const src = useFallback ? fallbackImg : img
+
   return (
     <div
       style={{
@@ -28,18 +34,18 @@ export function CardFace({ img, name, radius = 10, fontSize = 10 }: Props) {
       {showImg ? (
         <img
           className="card-img"
-          src={img}
+          src={src}
           alt={name}
           loading="lazy"
-          onError={() => setFailed(true)}
+          onError={() => {
+            if (useFallback) setFallbackFailed(true)
+            else setFailed(true)
+          }}
           onLoad={(e) => {
-            // pokemontcg.io liefert für noch nicht gescannte Karten (sehr neue
-            // Sets) statt der Kartenvorderseite einen generischen Karten-Rücken
-            // mit fester Größe 640×892. Echte Vorderseiten sind 245×342.
-            // In dem Fall auf den Namens-Fallback wechseln.
             const el = e.currentTarget
             if (el.naturalWidth === 640 && el.naturalHeight === 892) {
-              setFailed(true)
+              if (useFallback) setFallbackFailed(true)
+              else setFailed(true)
             }
           }}
         />

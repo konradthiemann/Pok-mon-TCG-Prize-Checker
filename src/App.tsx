@@ -11,6 +11,7 @@ import {
   score,
 } from './game'
 import { loadDecks, loadHistory, saveDecks, saveHistory } from './storage'
+import { resolveDeckImages } from './cardImages'
 import { cloudInsertRound, cloudLoadDecks, cloudLoadHistory, cloudUpsertDeck } from './sync'
 import { Onboarding } from './screens/Onboarding'
 import { Home } from './screens/Home'
@@ -102,6 +103,38 @@ export function App() {
     }
   }, [ready, configured, user?.id])
 
+  // Fehlende Kartenbilder bereits gespeicherter Decks nachladen (z. B. früher
+  // importierte Decks, deren Sets nicht in SETMAP stehen). Pro Deck genau einmal
+  // gestartet (auch für später aus der Cloud geladene Decks) und aktualisiert die
+  // betroffenen Decks nach und nach, damit im Spiel immer eine Vorderseite erscheint.
+  const resolvingRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    if (!ready) return
+    const pending = decks.filter(
+      (d) => !resolvingRef.current.has(d.id) && d.cards.some((c) => !c.api),
+    )
+    if (!pending.length) return
+    const mine = pending.map((d) => d.id)
+    mine.forEach((id) => resolvingRef.current.add(id))
+    let alive = true
+    void (async () => {
+      for (const d of pending) {
+        if (!alive) return
+        await resolveDeckImages(
+          d.cards,
+          (cards) => updateDeck({ ...d, cards }),
+          () => alive,
+        )
+      }
+    })()
+    return () => {
+      alive = false
+      // Ids wieder freigeben, damit ein abgebrochener Lauf (z. B. React
+      // StrictMode-Remount) erneut startet, statt dauerhaft übersprungen zu werden.
+      mine.forEach((id) => resolvingRef.current.delete(id))
+    }
+  }, [ready, decks])
+
   const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
 
   const finishOnboarding = () => {
@@ -134,6 +167,16 @@ export function App() {
     })
   }
 
+  // Ein bereits gespeichertes Deck ersetzen (z. B. nach dem Nachladen von Bildern).
+  const updateDeck = (deck: Deck) => {
+    setDecks((prev) => {
+      const next = prev.map((d) => (d.id === deck.id ? deck : d))
+      if (cloudRef.current && user) cloudUpsertDeck(user.id, deck)
+      else saveDecks(next)
+      return next
+    })
+  }
+
   const confirm = (g: GameState) => {
     const ended: GameState = { ...g, end: Date.now() }
     const r = score(ended)
@@ -149,13 +192,20 @@ export function App() {
 
   const saveImportedDeck = (name: string, text: string) => {
     const parsed = parseImport(text)
-    persistDeck({
+    const deck: Deck = {
       id: 'd' + Date.now(),
       name: name.trim(),
       format: 'Standard',
       cards: cardsOf(parsed.cards),
-    })
+    }
+    persistDeck(deck)
     setScreen('home')
+    // Bilder für Karten aus Sets ohne bekannte Zuordnung nachladen und das Deck
+    // damit aktualisieren, damit im Spiel immer eine Kartenvorderseite erscheint.
+    void resolveDeckImages(
+      deck.cards,
+      (cards) => updateDeck({ ...deck, cards }),
+    )
   }
 
   const themeCls = theme === 'dark' ? 'pc dark' : 'pc'

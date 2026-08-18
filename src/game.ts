@@ -11,10 +11,11 @@ export interface Card {
   q: number // Anzahl im Deck
   b?: number // Basis-Pokémon (mögliche aktive Position)
   img: string
+  fallbackImg: string
   key: string
 }
 
-export type CardInput = Omit<Card, 'img' | 'key'>
+export type CardInput = Omit<Card, 'img' | 'fallbackImg' | 'key'>
 
 export interface Deck {
   id: string
@@ -77,10 +78,16 @@ export const ONBOARDING = [
   },
 ]
 
+function limitlesstUrl(set: string, num: string): string {
+  const pad = num.replace(/[a-z]+$/i, '').padStart(3, '0') + num.replace(/^\d+/, '')
+  return `https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpci/${set}/${set}_${pad}_R_EN_LG.png`
+}
+
 export function cardsOf(list: CardInput[]): Card[] {
   return list.map((c) => ({
     ...c,
     img: c.api ? 'https://images.pokemontcg.io/' + c.api + '.png' : '',
+    fallbackImg: limitlesstUrl(c.s, c.c),
     key: c.n + '|' + c.s + c.c,
   }))
 }
@@ -218,6 +225,7 @@ export function deal(deck: Deck): GameState {
 export interface RevealRow {
   name: string
   img: string
+  fallbackImg: string
   picked: number
   actual: number
   st: 'hit' | 'part' | 'miss' | 'missed'
@@ -255,7 +263,7 @@ export function score(g: GameState): Result {
       const a = actual[k] || 0
       const c = byKey[k]
       const st: RevealRow['st'] = p > 0 && a > 0 ? (p === a ? 'hit' : 'part') : p > 0 ? 'miss' : 'missed'
-      return { name: c.n, img: c.img, picked: p, actual: a, st }
+      return { name: c.n, img: c.img, fallbackImg: c.fallbackImg, picked: p, actual: a, st }
     })
     .sort((x, y) => order[x.st] - order[y.st])
   const stars = starsFor(hits, time)

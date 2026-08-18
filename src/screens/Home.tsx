@@ -207,7 +207,7 @@ function DeckTile({
           overflow: 'hidden',
         }}
       >
-        <CardFace img={star.img} name={star.n} radius={12} fontSize={10} />
+        <CardFace img={star.img} fallbackImg={star.fallbackImg} name={star.n} radius={12} fontSize={10} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

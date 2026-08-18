@@ -317,7 +317,7 @@ function TableTab({
               boxShadow: '0 4px 12px rgba(79,195,247,.45)',
             }}
           >
-            <CardFace img={game.active.img} name={game.active.n} radius={9} fontSize={8} />
+            <CardFace img={game.active.img} fallbackImg={game.active.fallbackImg} name={game.active.n} radius={9} fontSize={8} />
             <span
               style={{
                 position: 'absolute',
@@ -349,7 +349,7 @@ function TableTab({
                 background: 'var(--slot)',
               }}
             >
-              <CardFace img={c.img} name={c.n.split(' ')[0]} radius={8} fontSize={7} />
+              <CardFace img={c.img} fallbackImg={c.fallbackImg} name={c.n.split(' ')[0]} radius={8} fontSize={7} />
             </div>
           ))}
         </div>
@@ -386,7 +386,8 @@ function TableTab({
             const up = !!raised[i]
             const x = d * 34 + (d <= -0.5 ? -50 : d >= 0.5 ? 50 : d * 100) + 44
             const rot = Math.max(-14, Math.min(14, d * 3))
-            const y = Math.abs(d) * 3.5 + (up ? -46 : 0)
+            const proximity = Math.max(0, 1 - Math.abs(d) / 3)
+            const y = Math.abs(d) * 3.5 - proximity * 24 + (up ? -62 : 0)
             return (
               <div
                 key={i}
@@ -396,9 +397,9 @@ function TableTab({
                 style={{
                   position: 'absolute',
                   left: '50%',
-                  top: 52,
-                  width: '88%',
-                  maxWidth: 340,
+                  top: 100,
+                  width: '71%',
+                  maxWidth: 275,
                   aspectRatio: '63 / 88',
                   zIndex: 200 + i,
                   transform: `translateX(calc(-50% + ${x.toFixed(1)}px)) translateY(${y.toFixed(
@@ -420,7 +421,7 @@ function TableTab({
                       : 'var(--shadow)',
                   }}
                 >
-                  <CardFace img={c.img} name={c.n} radius={10} fontSize={13} />
+                  <CardFace img={c.img} fallbackImg={c.fallbackImg} name={c.n} radius={10} fontSize={13} />
                 </div>
               </div>
             )
@@ -528,7 +529,7 @@ function ListTab({
                   opacity: isSel || selTotal < 6 ? 1 : 0.55,
                 }}
               >
-                <CardFace img={c.img} name={c.n.split(' ').slice(0, 2).join(' ')} radius={6} fontSize={7} />
+                <CardFace img={c.img} fallbackImg={c.fallbackImg} name={c.n.split(' ').slice(0, 2).join(' ')} radius={6} fontSize={7} />
                 <span
                   style={{
                     position: 'absolute',
