@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { type GameState, fmt } from '../game'
+import { type GameState } from '../game'
 import { CardFace } from '../CardFace'
 import { DeckBackground } from '../DeckBackground'
 
@@ -30,11 +30,8 @@ export function GameScreen({ game, dark, onChange, onQuit, onConfirm }: Props) {
 
   const selTotal = Object.values(game.sel).reduce((a, b) => a + b, 0)
   const el = ((game.end || Date.now()) - game.start) / 1000
-  const over = el > LIMIT
-  const timerColor = over ? 'var(--bad)' : 'var(--ink)'
-  const progWidth = Math.max(0, Math.min(1, (LIMIT - el) / LIMIT)) * 100 + '%'
-  const progColor = over ? 'var(--bad)' : el > LIMIT - 10 ? 'var(--warn)' : 'var(--accent)'
-  const progLabel = over ? '+' + fmt(el - LIMIT) : Math.ceil(LIMIT - el) + 's übrig'
+  // Anteil der verstrichenen Zeit (0→1), geclampt auf 1
+  const fill = Math.min(1, el / LIMIT)
 
   const canConfirm = selTotal === 6
 
@@ -63,60 +60,30 @@ export function GameScreen({ game, dark, onChange, onQuit, onConfirm }: Props) {
           flexDirection: 'column',
         }}
       >
-      {/* Kopf: Beenden + Timer/Restzeit + Fortschrittsbalken */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px 6px' }}>
+      {/* Kopf: Beenden (links) + Uhr (rechts) */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px 4px' }}>
         <button
           onClick={onQuit}
           aria-label="Beenden"
           style={{
-            width: 38,
-            height: 38,
-            borderRadius: 13,
+            width: 34,
+            height: 34,
+            borderRadius: 10,
             flex: 'none',
-            border: '1px solid var(--line)',
+            border: 'none',
             background: 'var(--surface)',
-            color: 'var(--ink)',
-            fontSize: 16,
+            color: 'var(--sub)',
+            fontSize: 14,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          ✕
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="2" y1="2" x2="12" y2="12" /><line x1="12" y1="2" x2="2" y2="12" />
+          </svg>
         </button>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-            <span
-              style={{
-                fontSize: 24,
-                fontWeight: 800,
-                letterSpacing: 0.5,
-                fontVariantNumeric: 'tabular-nums',
-                color: timerColor,
-              }}
-            >
-              {fmt(el)}
-            </span>
-            <span
-              style={{
-                fontSize: 10.5,
-                fontWeight: 700,
-                fontVariantNumeric: 'tabular-nums',
-                color: progColor,
-              }}
-            >
-              {progLabel}
-            </span>
-          </div>
-          <div style={{ height: 6, borderRadius: 999, background: 'var(--panel)', overflow: 'hidden' }}>
-            <div
-              style={{
-                height: '100%',
-                width: progWidth,
-                background: progColor,
-                borderRadius: 999,
-                transition: 'width .1s linear, background .3s',
-              }}
-            />
-          </div>
-        </div>
+        <ClockTimer elapsed={el} fill={fill} />
       </div>
 
       {tab === 'table' ? (
@@ -686,6 +653,48 @@ function RaisedShelf({
           </span>
         </button>
       ))}
+    </div>
+  )
+}
+
+// Kreisförmige Uhr: Bogen füllt sich im Uhrzeigersinn. Zeigt die Zeit als Text.
+// Dezent und informativ, nicht wertend — Farbe bleibt neutral.
+function ClockTimer({ elapsed, fill }: { elapsed: number; fill: number }) {
+  const r = 15
+  const circ = 2 * Math.PI * r
+  const dashOffset = circ * (1 - fill)
+  const m = Math.floor(elapsed / 60)
+  const s = Math.floor(elapsed % 60)
+  const label = m + ':' + (s < 10 ? '0' : '') + s
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span
+        style={{
+          fontSize: 14,
+          fontWeight: 600,
+          fontVariantNumeric: 'tabular-nums',
+          color: 'var(--sub)',
+        }}
+      >
+        {label}
+      </span>
+      <svg width="36" height="36" viewBox="0 0 36 36">
+        <circle cx="18" cy="18" r={r} fill="none" stroke="var(--panel)" strokeWidth="3" />
+        <circle
+          cx="18"
+          cy="18"
+          r={r}
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeDasharray={circ}
+          strokeDashoffset={dashOffset}
+          transform="rotate(-90 18 18)"
+          style={{ transition: 'stroke-dashoffset .3s linear' }}
+        />
+      </svg>
     </div>
   )
 }
