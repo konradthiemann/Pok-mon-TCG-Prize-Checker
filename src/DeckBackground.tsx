@@ -31,14 +31,14 @@ interface BgData {
 const cache = new Map<string, BgData>()
 const inflight = new Map<string, Promise<BgData>>()
 
-// Kartennamen ("Dragapult ex", "Mega Excadrill ex") auf den PokéAPI-Speziesnamen
-// abbilden ("dragapult", "excadrill"). "Mega "-Präfix wird entfernt, da PokeAPI
-// die Basisspezies verwendet.
+// Kartennamen auf den PokéAPI-Speziesnamen abbilden.
+// Entfernt: TCG-Suffixe (ex, gx, …), "Mega "-Präfix, Trainer-Präfixe ("N's ", "Rocket's ").
 function speciesOf(name: string): string {
   return name
     .toLowerCase()
     .replace(/\b(ex|gx|v|vmax|vstar|v-union|break|prime)\b/g, ' ')
     .replace(/^mega\s+/, '')
+    .replace(/^[a-z]+['']s\s+/i, '')
     .replace(/[.'':\u2018\u2019]/g, '')
     .trim()
     .replace(/\s+/g, '-')
