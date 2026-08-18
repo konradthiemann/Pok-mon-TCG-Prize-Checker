@@ -41,7 +41,8 @@ app.use(
         formAction: ["'self'"],
       },
     },
-    crossOriginEmbedderPolicy: false, // Card-Bilder von externen CDNs brauchen COEP: unsafe-none
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' }, // Card-Bilder von externen CDNs
   }),
 )
 
