@@ -5,7 +5,6 @@ const IMG = `pc-img-${VERSION}`
 
 // Minimal-Shell: index.html + Icon + Fonts. JS/CSS werden per stale-while-revalidate gecacht.
 const SHELL_ASSETS = [
-  '/',
   '/index.html',
   '/manifest.webmanifest',
   '/icon.svg',

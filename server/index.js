@@ -67,10 +67,10 @@ app.use((_req, res, next) => {
 
 app.use(express.static(DIST_DIR, { maxAge: '1h', index: false }))
 
-// SPA-Fallback: nur für Navigation-Requests (HTML), alles andere → 404.
+// SPA-Fallback: HTML-Requests + Root → index.html, alles andere → 404.
 app.get('*', (req, res) => {
   const accept = req.headers.accept || ''
-  if (accept.includes('text/html')) {
+  if (req.path === '/' || accept.includes('text/html')) {
     res.sendFile(path.join(DIST_DIR, 'index.html'))
   } else {
     res.status(404).end()
