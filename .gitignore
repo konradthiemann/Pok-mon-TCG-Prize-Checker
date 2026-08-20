@@ -1,6 +1,14 @@
 node_modules
 dist
-*.local
+
+# TypeScript incremental build cache (machine-local, never commit)
+*.tsbuildinfo
+
+# OS / editor
 .DS_Store
+*.local
+
+# Env — ignore real env files, but keep the documented example
 .env
 .env.*
+!.env.example
