@@ -1,4 +1,4 @@
-import { useState, useRef, type CSSProperties } from 'react'
+import { useState, useRef, useEffect, type CSSProperties } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { googleEnabled } from '../auth/supabase'
 import { useT } from '../i18n'
@@ -44,6 +44,20 @@ export function Login({ onBack, onDone }: Props) {
   const [loading, setLoading] = useState(false)
   const failCount = useRef(0)
   const lockedUntil = useRef(0)
+
+  // Der Google-Redirect verlässt die Seite normalerweise komplett (loading
+  // bleibt bewusst hängen, weil die Komponente eigentlich unmountet). Bricht
+  // der Nutzer den Google-Flow ab (z. B. Zurück-Button), stellt der Browser
+  // diese Seite oft per bfcache wieder her, statt neu zu laden — der
+  // React-State bleibt exakt so wie beim Verlassen, Button wäre sonst für
+  // immer deaktiviert.
+  useEffect(() => {
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) setLoading(false)
+    }
+    window.addEventListener('pageshow', onPageShow)
+    return () => window.removeEventListener('pageshow', onPageShow)
+  }, [])
 
   const reset = () => {
     setError(null)
