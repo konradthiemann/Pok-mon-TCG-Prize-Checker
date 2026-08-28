@@ -10,7 +10,7 @@ Live: https://prized.konradthiemann.de
 
 - **Frontend**: Vite + React 18 + TypeScript (strict)
 - **Styling**: CSS Custom Properties + Inline Styles (kein CSS-Framework)
-- **Backend**: Express Static Server (`server/index.js`) — nur SPA-Auslieferung
+- **Backend**: Express (`server/app.js`) — SPA-Auslieferung + optionale `/api/admin/*`-Endpoints für die control-plane-CRM-Anbindung (siehe `specs/admin-api.md`)
 - **Auth/DB**: Supabase (optional, ohne Env-Vars = Gast-Modus)
 - **i18n**: Eigener React Context (`src/i18n.tsx`), DE + EN
 - **Deployment**: Railway (auto-deploy von `main`), Nixpacks Builder
@@ -50,7 +50,10 @@ src/
   components/
     Drawer.tsx       — Seitenmenü (Theme, Sprache, Account, Legal)
 server/
-  index.js          — Express Static + SPA-Fallback + /healthz
+  app.js            — Express-App: Static + SPA-Fallback + /healthz + optionale Admin-API
+  index.js          — Entrypoint (Supabase-Admin-Client aus Env, app.listen)
+  adminApi.js       — /api/admin/*-Router (Bearer-Auth, control-plane-Anbindung)
+  lib/adminAggregate.js — reine Aggregations-Funktionen für die Admin-API (Stats/Usage/Decks)
 supabase/
   schema.sql        — DB-Schema (decks, rounds, RLS)
   002_add_archetype.sql — Migration
@@ -150,7 +153,7 @@ Immer über `var(--token)` referenzieren, nie hardcoded.
 Diese Dateien/Bereiche nicht ändern ohne explizite Anweisung:
 
 - `supabase/*.sql` — Migrationen sind bereits ausgeführt, neue als eigene Datei
-- `server/index.js` — Express-Server ist stabil, Änderungen nur bei Bedarf
+- `server/app.js` — Express-Server ist stabil, Änderungen nur bei Bedarf
 - `public/icon.svg` — Logo, nur bei explizitem Redesign-Auftrag
 - Demo-Decks in `game.ts` (`defaultDecks()`) — IDs `dragapult` und `ragingbolt` sind stabil, werden von History referenziert
 - `ONBOARDING` Array in `game.ts` — Onboarding-Texte jetzt in `i18n.tsx`, Array bleibt als Fallback
@@ -160,9 +163,10 @@ Diese Dateien/Bereiche nicht ändern ohne explizite Anweisung:
 - **Framework**: Vitest (Vite-nativ, Jest-kompatibel)
 - **Skill installiert**: `.agents/skills/vitest/`
 - **Browser-Tests**: Playwright via `.agents/skills/webapp-testing/`
-- **Priorität**: `game.ts` Unit-Tests (deal, score, parseImport, ago, fmt)
+- **Component-Tests**: jsdom + React Testing Library (`@testing-library/react`, `@testing-library/jest-dom/vitest`), seit dem Login-bfcache-Fix
+- **Server-Tests**: `server/**/*.test.js`, node-Environment (`// @vitest-environment node`-Pragma), Express-Router-Tests mit `supertest`
 - **Ausführen**: `npx vitest` (watch) / `npx vitest run` (einmalig)
-- **Testdateien**: `src/__tests__/*.test.ts` oder Co-located `*.test.ts`
+- **Testdateien**: `src/**/*.test.ts(x)` (Co-located oder `src/__tests__/`), `server/**/*.test.js`
 
 ## Ungewöhnliche Patterns
 
@@ -185,8 +189,9 @@ npm start          # Express Server (Port 8080)
 
 - Push auf `main` → Railway auto-deploy
 - Healthcheck: `GET /healthz`
-- Env-Vars für Supabase: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- Env-Vars für Supabase (Client): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 - Ohne diese Env-Vars läuft die App im Gast-Modus (nur Demo-Decks spielbar)
+- Env-Vars für Admin-API (Server, optional): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PRIZED_SERVICE_TOKEN` — siehe `specs/admin-api.md`
 
 ## Wichtige Architektur-Entscheidungen
 
@@ -200,4 +205,4 @@ npm start          # Express Server (Port 8080)
 
 - Impressum-Adresse ist PLATZHALTER — vor echtem Go-Live ausfüllen
 - Premium/Payment (Stripe) noch nicht implementiert
-- Tests fehlen komplett — Priorität: `game.ts` Unit-Tests
+- Test-Coverage außerhalb von `game.ts`/`adminAggregate.js`/`adminApi.js`/Login-bfcache noch dünn — restliche Screens/Components ungetestet
