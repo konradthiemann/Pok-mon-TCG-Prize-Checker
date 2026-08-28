@@ -192,6 +192,7 @@ npm start          # Express Server (Port 8080)
 - Env-Vars für Supabase (Client): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 - Ohne diese Env-Vars läuft die App im Gast-Modus (nur Demo-Decks spielbar)
 - Env-Vars für Admin-API (Server, optional): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PRIZED_SERVICE_TOKEN` — siehe `specs/admin-api.md`
+- `.github/workflows/keep-supabase-awake.yml`: pingt alle 3 Tage `/api/admin/stats`, damit Supabases Free-Tier-Projekt nicht nach 7 Tagen Inaktivität pausiert. Braucht `PRIZED_SERVICE_TOKEN` als GitHub-Actions-Secret (Repo-Settings → Secrets and variables → Actions), gleicher Wert wie in Railway.
 
 ## Wichtige Architektur-Entscheidungen
 

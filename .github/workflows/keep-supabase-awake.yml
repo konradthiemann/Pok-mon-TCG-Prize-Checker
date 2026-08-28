@@ -1,0 +1,35 @@
+name: Keep Supabase awake
+
+# Supabase pausiert Free-Tier-Projekte nach 7 Tagen ohne echte DB-Aktivität
+# (reine API-Calls auf gecachte Antworten zählen nicht). Dieser Job ruft alle
+# 3 Tage den eigenen /api/admin/stats-Endpoint auf, der intern echte
+# Supabase-Auth-/Postgres-Queries ausführt — genug Puffer vor der 7-Tage-
+# Grenze, ohne die Admin-API unnötig oft zu treffen.
+on:
+  schedule:
+    - cron: '0 6 */3 * *'
+  workflow_dispatch:
+
+concurrency:
+  group: keep-supabase-awake
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    name: Ping /api/admin/stats
+    runs-on: ubuntu-latest
+    steps:
+      - name: Request stats endpoint
+        run: |
+          status=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+            --max-time 20 \
+            -H "Authorization: Bearer ${PRIZED_SERVICE_TOKEN}" \
+            "https://prized.konradthiemann.de/api/admin/stats")
+          echo "HTTP status: $status"
+          cat /tmp/response.json
+          if [ "$status" != "200" ]; then
+            echo "::error::Unerwarteter Status $status — Supabase-Keep-Alive könnte fehlschlagen."
+            exit 1
+          fi
+        env:
+          PRIZED_SERVICE_TOKEN: ${{ secrets.PRIZED_SERVICE_TOKEN }}
