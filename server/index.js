@@ -32,6 +32,9 @@ app.use(
         connectSrc: [
           "'self'",
           'https://api.pokemontcg.io',
+          'https://images.pokemontcg.io',
+          'https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com',
+          'https://r2.limitlesstcg.net',
           'https://*.supabase.co',
           'https://pokeapi.co',
         ],
