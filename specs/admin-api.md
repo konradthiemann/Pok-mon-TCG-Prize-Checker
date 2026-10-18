@@ -39,10 +39,19 @@ nicht ins Client-Bundle).
 `ragingbolt`) sind rein clientseitig und gehören zu keinem echten Account,
 tauchen also in Supabase-Auswertungen nicht auf. Kein Ausschluss nötig.
 
+**Offline-Runden** (`public.rounds.m = 'offline'`, Migration
+`supabase/004_add_round_mode.sql`): Runden mit echten Karten. Die Zeit stoppt
+die App, die Treffer trägt der Spieler selbst ein. Sie zählen in allen
+**Rundenzahlen** mit (Aktivität). In **Ø-Dauer und Ø-Genauigkeit** fließen nur
+digitale Runden (`m is null`) ein, weil Offline-Werte damit nicht vergleichbar
+sind. Die Offline-Zähler sind additive Felder; bestehende Felder behalten ihren
+Namen und Typ.
+
 1. **`GET /api/admin/stats`**
    Given ein gültiger Service-Token,
    When der Endpoint aufgerufen wird,
-   Then liefert er `{ totalUsers, totalDecks, totalRounds, newUsersLast7d, newUsersLast30d }`.
+   Then liefert er `{ totalUsers, totalDecks, totalRounds, totalOfflineRounds, newUsersLast7d, newUsersLast30d }`
+   (`totalRounds` inkl. Offline-Runden).
 
 2. **`GET /api/admin/users?page=1&pageSize=200`**
    Given ein gültiger Service-Token,
@@ -76,9 +85,12 @@ tauchen also in Supabase-Auswertungen nicht auf. Kein Ausschluss nötig.
    Given ein gültiger Service-Token,
    When der Endpoint aufgerufen wird,
    Then liefert er pro Tag der letzten `days` Tage
-   `{ date, roundsPlayed, avgDurationSec, avgAccuracy, newUsers, activeUsers }`
+   `{ date, roundsPlayed, offlineRounds, avgDurationSec, avgAccuracy, newUsers, activeUsers }`
    aus `public.rounds` (`t` = Dauer, `h` = Treffer von 6 → Genauigkeit,
-   `ts` = Zeitstempel) sowie `auth.users.created_at` für Signups.
+   `ts` = Zeitstempel, `m` = Modus) sowie `auth.users.created_at` für Signups.
+   `roundsPlayed` und `activeUsers` zählen alle Runden, `offlineRounds` den
+   Offline-Anteil davon. `avgDurationSec`/`avgAccuracy` nur aus digitalen
+   Runden; `0`, wenn es an dem Tag keine digitale Runde gab.
    `activeUsers` = distinct `user_id` mit mindestens einer Runde an dem Tag.
 
 6. **`GET /api/admin/decks-summary`**
@@ -86,8 +98,9 @@ tauchen also in Supabase-Auswertungen nicht auf. Kein Ausschluss nötig.
    When der Endpoint aufgerufen wird,
    Then liefert er die meistgespielten Decks/Archetypen aggregiert über alle
    Accounts (`archetype` oder `name` aus `public.decks`, gejoint über
-   `d`-Feld in `public.rounds`), je `{ label, roundCount, avgAccuracy }`,
-   absteigend sortiert, limitiert auf Top 20.
+   `d`-Feld in `public.rounds`), je `{ label, roundCount, offlineRoundCount, avgAccuracy }`
+   (`roundCount` inkl. Offline-Runden; `avgAccuracy` nur aus digitalen Runden,
+   `0` ohne digitale Runde), nach `roundCount` absteigend sortiert, limitiert auf Top 20.
 
 ## Out of Scope
 
