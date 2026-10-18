@@ -18,14 +18,17 @@ function isValidRound(r: unknown): r is Round {
     typeof (r as Round).d === 'string' &&
     typeof (r as Round).t === 'number' && (r as Round).t > 0 &&
     typeof (r as Round).h === 'number' && (r as Round).h >= 0 && (r as Round).h <= 6 &&
-    typeof (r as Round).ts === 'number' && (r as Round).ts > 0
+    typeof (r as Round).ts === 'number' && (r as Round).ts > 0 &&
+    ((r as Round).m === undefined || (r as Round).m === 'offline')
   )
 }
 
 export function loadHistory(): Round[] {
   try {
     const h = JSON.parse(localStorage.getItem(HISTORY_KEY) || 'null')
-    if (Array.isArray(h) && h.length && h.every(isValidRound)) return h
+    // Ungültige Einträge einzeln verwerfen, statt die ganze History zu verlieren.
+    const valid = Array.isArray(h) ? h.filter(isValidRound) : []
+    if (valid.length) return valid
   } catch {
     /* ignore */
   }

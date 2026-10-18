@@ -30,6 +30,28 @@ export interface Round {
   t: number // Zeit in Sekunden
   h: number // Treffer (0..6)
   ts: number // Zeitstempel
+  m?: 'offline' // Spielmodus; fehlt = digital (auch bei allen Altdaten)
+}
+
+export type RoundMode = 'all' | 'digital' | 'offline'
+
+// Runde aus dem Offline-Modus: echte Karten, die App misst nur die Zeit,
+// die Treffer trägt der Spieler selbst ein.
+export function offlineRound(deckId: string, startMs: number, endMs: number, hits: number): Round {
+  if (!Number.isInteger(hits) || hits < 0 || hits > 6) {
+    throw new RangeError('hits must be an integer between 0 and 6')
+  }
+  // Mindestens 0,1 s — die DB verlangt t > 0.
+  const t = Math.max(0.1, Math.round((endMs - startMs) / 100) / 10)
+  return { d: deckId, t, h: hits, ts: endMs, m: 'offline' }
+}
+
+export function filterRounds(history: Round[], deckId: string, mode: RoundMode): Round[] {
+  return history.filter(
+    (r) =>
+      (deckId === 'all' || r.d === deckId) &&
+      (mode === 'all' || (mode === 'offline') === (r.m === 'offline')),
+  )
 }
 
 // Set-Kürzel -> pokemontcg.io Set-Id
@@ -167,8 +189,10 @@ export function seedHistory(): Round[] {
 }
 
 export function fmt(sec: number): string {
-  const m = Math.floor(sec / 60)
-  const s = sec - m * 60
+  // Erst auf Zehntel runden, sonst wird 59,96 s zu "0:60.0".
+  const tenths = Math.round(sec * 10)
+  const m = Math.floor(tenths / 600)
+  const s = (tenths - m * 600) / 10
   return m + ':' + (s < 10 ? '0' : '') + s.toFixed(1)
 }
 
@@ -279,6 +303,7 @@ export interface Result {
   hits: number
   rows: RevealRow[]
   deck: Deck
+  offline?: boolean // Offline-Runde: keine Kartenliste, nur Zeit + Treffer
 }
 
 // Auswahl gegen die tatsächlichen Preise auswerten.

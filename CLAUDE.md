@@ -20,7 +20,7 @@ Live: https://prized.konradthiemann.de
 
 ```
 src/
-  game.ts          — Kernlogik: Typen, deal(), score(), parseImport()
+  game.ts          — Kernlogik: Typen, deal(), score(), parseImport(), offlineRound(), filterRounds()
   gameFlow.ts      — Spielfluss-Helfer: Anheben/Typ-Lock, Auswahl, Kaskaden-Position
   App.tsx           — Screen-State-Machine, Routing
   i18n.tsx          — Übersetzungen (DE/EN), useT() Hook
@@ -37,6 +37,7 @@ src/
   screens/
     Home.tsx         — Deck-Übersicht
     GameScreen.tsx   — Spielfeld (Deck-Kaskade + Deckliste)
+    OfflineScreen.tsx — Offline-Modus: Stoppuhr + Treffer-Eingabe (echte Karten)
     Reveal.tsx       — Ergebnis-Anzeige
     ImportScreen.tsx  — Deck-Import (Textfeld)
     DeckBuilder.tsx   — Deck erstellen (Suche + Paste)
@@ -58,6 +59,8 @@ server/
 supabase/
   schema.sql        — DB-Schema (decks, rounds, RLS)
   002_add_archetype.sql — Migration
+  003_add_round_constraints.sql — Migration
+  004_add_round_mode.sql — Migration: rounds.m (null = digital, 'offline')
 public/
   icon.svg          — App-Icon
   manifest.webmanifest
@@ -202,9 +205,10 @@ npm start          # Express Server (Port 8080)
 - **Kartenbilder**: 2-stufiger Fallback (pokemontcg.io → limitlesstcg CDN → Name-Platzhalter)
 - **Basis-Pokémon-Erkennung**: API-Call → `b:1|0` Flag → localStorage-Cache (`pc_basic_v1`)
 - **Demo-Decks** (dragapult, ragingbolt): nicht bearbeitbar/löschbar, immer kostenlos spielbar
+- **Runden-Modus**: `Round.m` fehlt = digital, `'offline'` = Offline-Modus. Neue Modi brauchen eine Migration (Check-Constraint `rounds_m_valid`) und eine Erweiterung von `isValidRound` in `storage.ts`
 
 ## Bekannte TODOs
 
 - Impressum-Adresse ist PLATZHALTER — vor echtem Go-Live ausfüllen
 - Premium/Payment (Stripe) noch nicht implementiert
-- Test-Coverage außerhalb von `game.ts`/`gameFlow.ts`/GameScreen/`adminAggregate.js`/`adminApi.js`/Login-bfcache noch dünn — restliche Screens/Components ungetestet
+- Test-Coverage außerhalb von `game.ts`/`gameFlow.ts`/`storage.ts`/`sync.ts` (Runden)/GameScreen/OfflineScreen/Stats/Home (Offline-Start)/Drawer/`adminAggregate.js`/`adminApi.js`/Login-bfcache noch dünn — restliche Screens/Components ungetestet

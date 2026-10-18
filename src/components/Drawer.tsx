@@ -61,9 +61,14 @@ export function Drawer({ open, theme, onClose, onToggleTheme, onLogin, onAccount
           height: '100%',
           width: 'min(82%, 320px)',
           background: 'var(--surface)',
-          boxShadow: '-14px 0 40px rgba(0,0,0,.25)',
+          // Geschlossen: kein Schatten (ragt sonst in den Viewport) und
+          // unsichtbar, damit Tab-Fokus nicht im versteckten Menü landet.
+          boxShadow: open ? '-14px 0 40px rgba(0,0,0,.25)' : 'none',
           transform: open ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform .26s cubic-bezier(.4,0,.2,1)',
+          visibility: open ? 'visible' : 'hidden',
+          transition: open
+            ? 'transform .26s cubic-bezier(.4,0,.2,1)'
+            : 'transform .26s cubic-bezier(.4,0,.2,1), visibility 0s .26s, box-shadow 0s .26s',
           zIndex: 41,
           display: 'flex',
           flexDirection: 'column',

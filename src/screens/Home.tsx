@@ -10,6 +10,7 @@ interface Props {
   loggedIn: boolean
   onMenu: () => void
   onPlay: (deck: Deck) => void
+  onOffline: (deck: Deck) => void
   onImport: () => void
   onStats: () => void
   onDelete: (deckId: string) => void
@@ -17,7 +18,7 @@ interface Props {
   onEdit: (deck: Deck) => void
 }
 
-export function Home({ decks, history, loggedIn, onMenu, onPlay, onImport, onStats, onDelete, onRename, onEdit }: Props) {
+export function Home({ decks, history, loggedIn, onMenu, onPlay, onOffline, onImport, onStats, onDelete, onRename, onEdit }: Props) {
   const t = useT()
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
@@ -62,6 +63,7 @@ export function Home({ decks, history, loggedIn, onMenu, onPlay, onImport, onSta
             locked={!loggedIn && !isDemoDeck(d)}
             isDemo={isDemoDeck(d)}
             onPlay={() => onPlay(d)}
+            onOffline={() => onOffline(d)}
             onDelete={() => onDelete(d.id)}
             onRename={(name) => onRename(d.id, name)}
             onEdit={() => onEdit(d)}
@@ -97,6 +99,7 @@ function DeckTile({
   locked,
   isDemo,
   onPlay,
+  onOffline,
   onDelete,
   onRename,
   onEdit,
@@ -106,6 +109,7 @@ function DeckTile({
   locked: boolean
   isDemo: boolean
   onPlay: () => void
+  onOffline: () => void
   onDelete: () => void
   onRename: (name: string) => void
   onEdit: () => void
@@ -217,6 +221,35 @@ function DeckTile({
           </>
         )}
       </div>
+      {/* Offline-Runde mit echten Karten: App misst nur die Zeit */}
+      {!editing && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onOffline() }}
+          disabled={locked}
+          aria-label={t.playOffline(deck.name)}
+          title={locked ? t.accountRequired : t.offlineTitle}
+          style={{
+            width: 36,
+            height: 36,
+            flexShrink: 0,
+            border: 'none',
+            borderRadius: 10,
+            background: 'var(--panel)',
+            color: 'var(--accentInk)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: locked ? 'default' : 'pointer',
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+            <circle cx="9" cy="10.5" r="5.5" />
+            <line x1="9" y1="10.5" x2="9" y2="7.5" />
+            <line x1="7" y1="2.5" x2="11" y2="2.5" />
+            <line x1="13.5" y1="5.5" x2="14.5" y2="4.5" />
+          </svg>
+        </button>
+      )}
       {/* Actions: Bearbeiten/Löschen — nicht für Demo-Decks */}
       {!isDemo && !editing && (
         <div style={{ position: 'relative', flexShrink: 0 }}>
