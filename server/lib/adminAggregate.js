@@ -29,6 +29,13 @@ function startOfUTCDay(ts) {
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
 }
 
+// Offline-Runden (echte Karten, Treffer selbst eingetragen, Spalte m) zählen als
+// Aktivität, fließen aber nicht in Ø-Dauer/Ø-Genauigkeit ein — ihre Werte sind
+// mit digitalen Runden nicht vergleichbar.
+function isOffline(round) {
+  return round.m === 'offline'
+}
+
 function dateKey(ts) {
   return new Date(ts).toISOString().slice(0, 10)
 }
@@ -39,6 +46,7 @@ export function buildStats(users, decks, rounds, now = Date.now()) {
     totalUsers: users.length,
     totalDecks: decks.length,
     totalRounds: rounds.length,
+    totalOfflineRounds: rounds.filter(isOffline).length,
     newUsersLast7d: newSince(7 * DAY_MS),
     newUsersLast30d: newSince(30 * DAY_MS),
   }
@@ -77,7 +85,7 @@ export function buildUsage(users, rounds, days, now = Date.now()) {
   const byDate = new Map(
     buckets.map((date) => [
       date,
-      { date, roundsPlayed: 0, durationSum: 0, accuracySum: 0, newUsers: 0, activeUserIds: new Set() },
+      { date, roundsPlayed: 0, offlineRounds: 0, digitalRounds: 0, durationSum: 0, accuracySum: 0, newUsers: 0, activeUserIds: new Set() },
     ]),
   )
 
@@ -85,9 +93,14 @@ export function buildUsage(users, rounds, days, now = Date.now()) {
     const bucket = byDate.get(dateKey(startOfUTCDay(r.ts)))
     if (!bucket) continue
     bucket.roundsPlayed++
+    bucket.activeUserIds.add(r.user_id)
+    if (isOffline(r)) {
+      bucket.offlineRounds++
+      continue
+    }
+    bucket.digitalRounds++
     bucket.durationSum += r.t
     bucket.accuracySum += r.h / 6
-    bucket.activeUserIds.add(r.user_id)
   }
 
   for (const u of users) {
@@ -100,8 +113,9 @@ export function buildUsage(users, rounds, days, now = Date.now()) {
     return {
       date: b.date,
       roundsPlayed: b.roundsPlayed,
-      avgDurationSec: b.roundsPlayed ? round2(b.durationSum / b.roundsPlayed) : 0,
-      avgAccuracy: b.roundsPlayed ? round2(b.accuracySum / b.roundsPlayed) : 0,
+      offlineRounds: b.offlineRounds,
+      avgDurationSec: b.digitalRounds ? round2(b.durationSum / b.digitalRounds) : 0,
+      avgAccuracy: b.digitalRounds ? round2(b.accuracySum / b.digitalRounds) : 0,
       newUsers: b.newUsers,
       activeUsers: b.activeUserIds.size,
     }
@@ -115,14 +129,24 @@ export function buildDecksSummary(decks, rounds, limit = 20) {
   for (const r of rounds) {
     const deck = deckByKey.get(`${r.user_id}|${r.d}`)
     const label = deck?.archetype || deck?.name || r.d
-    const entry = agg.get(label) ?? { label, roundCount: 0, accuracySum: 0 }
+    const entry = agg.get(label) ?? { label, roundCount: 0, offlineRoundCount: 0, digitalRoundCount: 0, accuracySum: 0 }
     entry.roundCount++
-    entry.accuracySum += r.h / 6
+    if (isOffline(r)) {
+      entry.offlineRoundCount++
+    } else {
+      entry.digitalRoundCount++
+      entry.accuracySum += r.h / 6
+    }
     agg.set(label, entry)
   }
 
   return [...agg.values()]
-    .map((e) => ({ label: e.label, roundCount: e.roundCount, avgAccuracy: round2(e.accuracySum / e.roundCount) }))
+    .map((e) => ({
+      label: e.label,
+      roundCount: e.roundCount,
+      offlineRoundCount: e.offlineRoundCount,
+      avgAccuracy: e.digitalRoundCount ? round2(e.accuracySum / e.digitalRoundCount) : 0,
+    }))
     .sort((a, b) => b.roundCount - a.roundCount)
     .slice(0, limit)
 }

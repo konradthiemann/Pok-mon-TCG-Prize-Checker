@@ -19,7 +19,7 @@ describe('buildStats', () => {
     const decks = [{ user_id: 'u1', id: 'd1' }]
     const rounds = [
       { user_id: 'u1', ts: NOW },
-      { user_id: 'u1', ts: NOW },
+      { user_id: 'u1', ts: NOW, m: 'offline' },
     ]
 
     const stats = buildStats(users, decks, rounds, NOW)
@@ -27,7 +27,8 @@ describe('buildStats', () => {
     expect(stats).toEqual({
       totalUsers: 3,
       totalDecks: 1,
-      totalRounds: 2,
+      totalRounds: 2, // Aktivität: alle Runden
+      totalOfflineRounds: 1,
       newUsersLast7d: 1,
       newUsersLast30d: 2,
     })
@@ -93,7 +94,28 @@ describe('buildUsage', () => {
 
   it('liefert für Tage ohne Runden Nullen statt NaN', () => {
     const usage = buildUsage([], [], 1, NOW)
-    expect(usage[0]).toMatchObject({ roundsPlayed: 0, avgDurationSec: 0, avgAccuracy: 0, activeUsers: 0, newUsers: 0 })
+    expect(usage[0]).toMatchObject({ roundsPlayed: 0, offlineRounds: 0, avgDurationSec: 0, avgAccuracy: 0, activeUsers: 0, newUsers: 0 })
+  })
+
+  it('zählt Offline-Runden als Aktivität, rechnet Ø-Dauer und Ø-Genauigkeit aber nur aus digitalen Runden', () => {
+    const rounds = [
+      { user_id: 'u1', ts: NOW, t: 40, h: 3 },
+      { user_id: 'u1', ts: NOW, t: 60, h: 6 },
+      { user_id: 'u2', ts: NOW, t: 300, h: 0, m: 'offline' },
+    ]
+
+    const [day] = buildUsage([], rounds, 1, NOW)
+
+    expect(day.roundsPlayed).toBe(3)
+    expect(day.offlineRounds).toBe(1)
+    expect(day.activeUsers).toBe(2)
+    expect(day.avgDurationSec).toBe(50)
+    expect(day.avgAccuracy).toBeCloseTo(0.75, 5)
+  })
+
+  it('liefert Ø-Werte 0 statt NaN, wenn an einem Tag nur offline gespielt wurde', () => {
+    const [day] = buildUsage([], [{ user_id: 'u1', ts: NOW, t: 90, h: 4, m: 'offline' }], 1, NOW)
+    expect(day).toMatchObject({ roundsPlayed: 1, offlineRounds: 1, avgDurationSec: 0, avgAccuracy: 0 })
   })
 })
 
@@ -113,8 +135,20 @@ describe('buildDecksSummary', () => {
     const summary = buildDecksSummary(decks, rounds)
 
     expect(summary).toEqual([
-      { label: 'Dragapult', roundCount: 2, avgAccuracy: 0.75 }, // (1 + 0.5) / 2
-      { label: 'Charizard ex', roundCount: 1, avgAccuracy: 0 },
+      { label: 'Dragapult', roundCount: 2, offlineRoundCount: 0, avgAccuracy: 0.75 }, // (1 + 0.5) / 2
+      { label: 'Charizard ex', roundCount: 1, offlineRoundCount: 0, avgAccuracy: 0 },
+    ])
+  })
+
+  it('zählt Offline-Runden je Deck mit, die Ø-Genauigkeit aber nur aus digitalen Runden', () => {
+    const decks = [{ user_id: 'u1', id: 'd1', name: 'Dragapult ex', archetype: null }]
+    const rounds = [
+      { user_id: 'u1', d: 'd1', h: 6 },
+      { user_id: 'u1', d: 'd1', h: 0, m: 'offline' },
+    ]
+
+    expect(buildDecksSummary(decks, rounds)).toEqual([
+      { label: 'Dragapult ex', roundCount: 2, offlineRoundCount: 1, avgAccuracy: 1 },
     ])
   })
 

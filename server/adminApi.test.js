@@ -22,11 +22,18 @@ function fakeSupabase({ users = [], decks = [], rounds = [] } = {}) {
   const listUsers = vi.fn(async () => ({ data: { users, total: users.length }, error: null }))
 
   const tables = { decks, rounds }
+  // Merkt sich die angefragten Spalten je Tabelle, damit Tests prüfen können,
+  // dass die Routen alle für die Aggregation nötigen Felder laden.
+  const selected = {}
   return {
     auth: { admin: { listUsers, updateUserById, deleteUser } },
     from: (table) => ({
-      select: async () => ({ data: tables[table] ?? [], error: null }),
+      select: async (columns) => {
+        selected[table] = columns.split(',').map((c) => c.trim())
+        return { data: tables[table] ?? [], error: null }
+      },
     }),
+    selected,
   }
 }
 
@@ -59,7 +66,8 @@ describe('GET /api/admin/stats', () => {
     const res = await request(app).get('/api/admin/stats').set('Authorization', `Bearer ${TOKEN}`)
 
     expect(res.status).toBe(200)
-    expect(res.body).toMatchObject({ totalUsers: 1, totalDecks: 1, totalRounds: 1 })
+    expect(res.body).toMatchObject({ totalUsers: 1, totalDecks: 1, totalRounds: 1, totalOfflineRounds: 0 })
+    expect(supabase.selected.rounds).toContain('m')
   })
 })
 
@@ -134,6 +142,7 @@ describe('GET /api/admin/usage', () => {
 
     expect(res.status).toBe(200)
     expect(res.body).toHaveLength(7)
+    expect(supabase.selected.rounds).toEqual(expect.arrayContaining(['user_id', 'ts', 't', 'h', 'm']))
   })
 })
 
@@ -148,6 +157,7 @@ describe('GET /api/admin/decks-summary', () => {
     const res = await request(app).get('/api/admin/decks-summary').set('Authorization', `Bearer ${TOKEN}`)
 
     expect(res.status).toBe(200)
-    expect(res.body).toEqual([{ label: 'Dragapult', roundCount: 1, avgAccuracy: 1 }])
+    expect(res.body).toEqual([{ label: 'Dragapult', roundCount: 1, offlineRoundCount: 0, avgAccuracy: 1 }])
+    expect(supabase.selected.rounds).toContain('m')
   })
 })

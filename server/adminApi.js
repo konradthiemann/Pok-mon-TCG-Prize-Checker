@@ -36,7 +36,7 @@ export function createAdminRouter({ supabaseAdmin, serviceToken }) {
     const [users, decks, rounds] = await Promise.all([
       fetchAllUsers(supabaseAdmin),
       fetchAllRows(supabaseAdmin, 'decks', 'user_id'),
-      fetchAllRows(supabaseAdmin, 'rounds', 'user_id'),
+      fetchAllRows(supabaseAdmin, 'rounds', 'user_id, m'),
     ])
     res.json(buildStats(users, decks, rounds))
   })
@@ -73,7 +73,7 @@ export function createAdminRouter({ supabaseAdmin, serviceToken }) {
     const days = Math.max(1, Math.min(90, Number(req.query.days) || 30))
     const [users, rounds] = await Promise.all([
       fetchAllUsers(supabaseAdmin),
-      fetchAllRows(supabaseAdmin, 'rounds', 'user_id, ts, t, h'),
+      fetchAllRows(supabaseAdmin, 'rounds', 'user_id, ts, t, h, m'),
     ])
     res.json(buildUsage(users, rounds, days))
   })
@@ -81,7 +81,7 @@ export function createAdminRouter({ supabaseAdmin, serviceToken }) {
   router.get('/decks-summary', async (req, res) => {
     const [decks, rounds] = await Promise.all([
       fetchAllRows(supabaseAdmin, 'decks', 'user_id, id, name, archetype'),
-      fetchAllRows(supabaseAdmin, 'rounds', 'user_id, d, h'),
+      fetchAllRows(supabaseAdmin, 'rounds', 'user_id, d, h, m'),
     ])
     res.json(buildDecksSummary(decks, rounds))
   })
