@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { type Deck, type Round, ago, fmt } from '../game'
+import { type Deck, type Round, type RoundMode, ago, filterRounds, fmt } from '../game'
 import { NavBar } from './NavBar'
 import { useT } from '../i18n'
 
@@ -13,7 +13,10 @@ interface Props {
 export function Stats({ decks, history, onMenu, onHome }: Props) {
   const t = useT()
   const [filter, setFilter] = useState<string>('all')
-  const rounds = history.filter((x) => filter === 'all' || x.d === filter)
+  const [mode, setMode] = useState<RoundMode>('all')
+  // Modus-Filter nur zeigen, wenn es überhaupt Offline-Runden gibt.
+  const hasOffline = history.some((x) => x.m === 'offline')
+  const rounds = filterRounds(history, filter, hasOffline ? mode : 'all')
   const dName: Record<string, string> = {}
   decks.forEach((d) => (dName[d.id] = d.name))
 
@@ -23,6 +26,11 @@ export function Stats({ decks, history, onMenu, onHome }: Props) {
   const best = has ? Math.min(...rounds.map((x) => x.t)) : 0
 
   const chips = [{ id: 'all', label: t.allDecks }, ...decks.map((d) => ({ id: d.id, label: d.name }))]
+  const modeChips: { id: RoundMode; label: string }[] = [
+    { id: 'all', label: t.modeAll },
+    { id: 'digital', label: t.modeDigital },
+    { id: 'offline', label: t.modeOffline },
+  ]
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
@@ -54,28 +62,22 @@ export function Stats({ decks, history, onMenu, onHome }: Props) {
 
       <div className="pc-scroll" style={{ padding: '4px 16px 20px' }}>
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 12 }}>
-          {chips.map((c) => {
-            const on = filter === c.id
-            return (
-              <button
-                key={c.id}
-                onClick={() => setFilter(c.id)}
-                style={{
-                  flexShrink: 0,
-                  border: 'none',
-                  background: on ? 'var(--accentInk)' : 'var(--surface)',
-                  color: on ? '#fff' : 'var(--sub)',
-                  borderRadius: 8,
-                  padding: '6px 12px',
-                  fontSize: 12,
-                  fontWeight: 600,
-                }}
-              >
-                {c.label}
-              </button>
-            )
-          })}
+          {chips.map((c) => (
+            <Chip key={c.id} on={filter === c.id} onClick={() => setFilter(c.id)}>
+              {c.label}
+            </Chip>
+          ))}
         </div>
+
+        {hasOffline && (
+          <div role="group" aria-label={t.playMode} style={{ display: 'flex', gap: 6, paddingBottom: 12 }}>
+            {modeChips.map((c) => (
+              <Chip key={c.id} on={mode === c.id} onClick={() => setMode(c.id)}>
+                {c.label}
+              </Chip>
+            ))}
+          </div>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
           <Big value={has ? fmt(avgT) : '—'} label={t.avgTime} />
@@ -83,7 +85,7 @@ export function Stats({ decks, history, onMenu, onHome }: Props) {
           <Big value={has ? fmt(best) : '—'} label={t.bestTime} />
         </div>
 
-        {has && <Chart rounds={rounds.slice(-12)} />}
+        {rounds.length > 1 && <Chart rounds={rounds.slice(-12)} />}
 
         <p
           style={{
@@ -119,7 +121,10 @@ export function Stats({ decks, history, onMenu, onHome }: Props) {
                   <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>
                     {dName[r.d] || t.deck}
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--sub)' }}>{ago(r.ts, t)}</div>
+                  <div style={{ fontSize: 12, color: 'var(--sub)' }}>
+                    {ago(r.ts, t)}
+                    {r.m === 'offline' ? ` · ${t.modeOffline}` : ''}
+                  </div>
                 </div>
                 <span
                   style={{
@@ -153,6 +158,27 @@ export function Stats({ decks, history, onMenu, onHome }: Props) {
 
       <NavBar active="stats" onDecks={onHome} onStats={() => {}} />
     </div>
+  )
+}
+
+function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-pressed={on}
+      style={{
+        flexShrink: 0,
+        border: 'none',
+        background: on ? 'var(--accent)' : 'var(--surface)',
+        color: on ? '#06323f' : 'var(--sub)',
+        borderRadius: 8,
+        padding: '6px 12px',
+        fontSize: 12,
+        fontWeight: 600,
+      }}
+    >
+      {children}
+    </button>
   )
 }
 

@@ -18,6 +18,7 @@ import { Home } from './screens/Home'
 import { ImportScreen } from './screens/ImportScreen'
 import { GameScreen } from './screens/GameScreen'
 import { Reveal } from './screens/Reveal'
+import { OfflineScreen } from './screens/OfflineScreen'
 import { Stats } from './screens/Stats'
 import { Login } from './screens/Login'
 import { AccountSettings } from './screens/AccountSettings'
@@ -32,6 +33,7 @@ export type Screen =
   | 'home'
   | 'import'
   | 'game'
+  | 'offline'
   | 'reveal'
   | 'stats'
   | 'login'
@@ -58,6 +60,7 @@ export function App() {
   const [history, setHistory] = useState<Round[]>(() => loadHistory())
   const [game, setGame] = useState<GameState | null>(null)
   const [result, setResult] = useState<Result | null>(null)
+  const [offlineDeck, setOfflineDeck] = useState<Deck | null>(null)
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null)
   // Gast: Demo-Decks frei spielbar, importierte Decks brauchen Account.
   // Eingeloggt: alles spielbar. Premium/Paywall kommt später.
@@ -81,14 +84,19 @@ export function App() {
         const [cd, ch] = await Promise.all([cloudLoadDecks(), cloudLoadHistory()])
         if (!alive) return
         // Erstanmeldung: leere Cloud mit den lokalen Daten befüllen (Migration).
-        if (cd.length === 0) {
+        // null = Ladefehler → nichts migrieren (sonst Duplikate), leer anzeigen.
+        if (cd === null) {
+          setDecks([])
+        } else if (cd.length === 0) {
           const local = loadDecks()
           await Promise.all(local.map((d) => cloudUpsertDeck(user.id, d)))
           if (alive) setDecks(local)
         } else {
           setDecks(cd)
         }
-        if (ch.length === 0) {
+        if (ch === null) {
+          setHistory([])
+        } else if (ch.length === 0) {
           const localH = loadHistory()
           await Promise.all(localH.map((r) => cloudInsertRound(user.id, r)))
           if (alive) setHistory(localH)
@@ -155,6 +163,22 @@ export function App() {
     setScreen('game')
   }
 
+  // Offline-Modus: echte Karten, die App misst nur die Zeit. Gleiche Gast-Regel wie digital.
+  const startOffline = (deck: Deck) => {
+    if (!loggedIn && !isDemoDeck(deck)) {
+      setScreen('login')
+      return
+    }
+    setResult(null)
+    setOfflineDeck(deck)
+    setScreen('offline')
+  }
+
+  const quitOffline = () => {
+    setOfflineDeck(null)
+    setScreen('home')
+  }
+
   const quitGame = () => {
     setGame(null)
     setScreen('home')
@@ -188,14 +212,24 @@ export function App() {
     })
   }
 
-  const confirm = (g: GameState) => {
-    const ended: GameState = { ...g, end: Date.now() }
-    const r = score(ended)
-    const round: Round = { d: g.deck.id, t: +r.time.toFixed(1), h: r.hits, ts: Date.now() }
+  const recordRound = (round: Round) => {
     const nextHistory = [...history, round]
     setHistory(nextHistory)
     if (cloudRef.current && user) cloudInsertRound(user.id, round)
     else saveHistory(nextHistory)
+  }
+
+  const saveOffline = (round: Round) => {
+    if (!offlineDeck) return
+    recordRound(round)
+    setResult({ time: round.t, hits: round.h, rows: [], deck: offlineDeck, offline: true })
+    setScreen('reveal')
+  }
+
+  const confirm = (g: GameState) => {
+    const ended: GameState = { ...g, end: Date.now() }
+    const r = score(ended)
+    recordRound({ d: g.deck.id, t: +r.time.toFixed(1), h: r.hits, ts: Date.now() })
     setResult(r)
     setGame(ended)
     setScreen('reveal')
@@ -235,6 +269,7 @@ export function App() {
       loggedIn={loggedIn}
       onMenu={() => setMenuOpen(true)}
       onPlay={startGame}
+      onOffline={startOffline}
       onImport={() => { setEditingDeck(null); setScreen('import') }}
       onEdit={(deck) => { setEditingDeck(deck); setScreen('import') }}
       onStats={() => setScreen('stats')}
@@ -270,11 +305,17 @@ export function App() {
         ) : (
           homeScreen
         )
+      case 'offline':
+        return offlineDeck ? (
+          <OfflineScreen key={offlineDeck.id} deck={offlineDeck} onQuit={quitOffline} onSave={saveOffline} />
+        ) : (
+          homeScreen
+        )
       case 'reveal':
         return result ? (
           <Reveal
             result={result}
-            onPlayAgain={() => startGame(result.deck)}
+            onPlayAgain={() => (result.offline ? startOffline(result.deck) : startGame(result.deck))}
             onHome={() => setScreen('home')}
             onStats={() => setScreen('stats')}
           />
@@ -301,7 +342,7 @@ export function App() {
       case 'agb':
         return <Legal doc={screen} onBack={() => setScreen('home')} />
     }
-  }, [screen, decks, history, theme, game, result, loggedIn, user])
+  }, [screen, decks, history, theme, game, result, offlineDeck, loggedIn, user])
 
   return (
     <div className={`pc-root ${theme === 'dark' ? 'dark' : ''}`}>

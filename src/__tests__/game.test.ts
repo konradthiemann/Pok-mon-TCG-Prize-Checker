@@ -12,7 +12,10 @@ import {
   isDemoDeck,
   defaultDecks,
   seedHistory,
+  offlineRound,
+  filterRounds,
   type Card,
+  type Round,
   type CardInput,
   type Deck,
   type GameState,
@@ -23,6 +26,11 @@ import {
 describe('fmt', () => {
   it('formats seconds under a minute', () => {
     expect(fmt(45.3)).toBe('0:45.3')
+  })
+
+  it('rundet auf Zehntel, bevor Minuten und Sekunden getrennt werden', () => {
+    expect(fmt(59.96)).toBe('1:00.0')
+    expect(fmt(9.96)).toBe('0:10.0')
   })
 
   it('formats exactly 60 seconds', () => {
@@ -440,5 +448,50 @@ describe('seedHistory', () => {
       expect(r.h).toBeLessThanOrEqual(6)
       expect(r.ts).toBeGreaterThan(0)
     }
+  })
+})
+
+describe('offlineRound', () => {
+  const start = 1_700_000_000_000
+
+  it('misst die Zeit in Sekunden, auf 0,1 gerundet, und markiert die Runde als offline', () => {
+    expect(offlineRound('dragapult', start, start + 83_437, 4)).toEqual({
+      d: 'dragapult',
+      t: 83.4,
+      h: 4,
+      ts: start + 83_437,
+      m: 'offline',
+    })
+  })
+
+  it('liefert mindestens 0,1 s, damit die Runde gültig bleibt (t > 0)', () => {
+    expect(offlineRound('x', start, start + 20, 0).t).toBe(0.1)
+    expect(offlineRound('x', start, start, 6).t).toBe(0.1)
+  })
+
+  it.each([-1, 7, 2.5, Number.NaN])('lehnt %s Treffer ab', (hits) => {
+    expect(() => offlineRound('x', start, start + 1000, hits)).toThrow(RangeError)
+  })
+})
+
+describe('filterRounds', () => {
+  const history: Round[] = [
+    { d: 'a', t: 60, h: 4, ts: 1 },
+    { d: 'a', t: 90, h: 5, ts: 2, m: 'offline' },
+    { d: 'b', t: 70, h: 3, ts: 3 },
+    { d: 'b', t: 95, h: 6, ts: 4, m: 'offline' },
+  ]
+  const ts = (rs: Round[]) => rs.map((r) => r.ts)
+
+  it('filtert nach Deck und Modus', () => {
+    expect(ts(filterRounds(history, 'all', 'all'))).toEqual([1, 2, 3, 4])
+    expect(ts(filterRounds(history, 'a', 'all'))).toEqual([1, 2])
+    expect(ts(filterRounds(history, 'all', 'offline'))).toEqual([2, 4])
+    expect(ts(filterRounds(history, 'b', 'offline'))).toEqual([4])
+  })
+
+  it('zählt Runden ohne Modus-Feld (Altdaten) als digital', () => {
+    expect(ts(filterRounds(history, 'all', 'digital'))).toEqual([1, 3])
+    expect(ts(filterRounds(history, 'a', 'digital'))).toEqual([1])
   })
 })

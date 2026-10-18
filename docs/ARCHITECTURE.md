@@ -34,7 +34,7 @@ src/
   auth/                Supabase-Client + AuthProvider (React Context)
   components/Drawer.tsx  Seitenmenü (Theme, Account, Rechtstexte)
   screens/             Onboarding, Home, ImportScreen, GameScreen,
-                       Reveal, Stats, Login, AccountSettings,
+                       OfflineScreen, Reveal, Stats, Login, AccountSettings,
                        ResetPassword, Paywall, Legal, NavBar
 server/index.js        Express-Static-Server (Produktion)
 public/                icon.svg, manifest.webmanifest, sw.js
@@ -43,10 +43,19 @@ public/                icon.svg, manifest.webmanifest, sw.js
 ## Screen-State-Machine (`App.tsx`)
 
 Statt eines Routers steuert ein `screen`-State das aktive Bild. Werte:
-`onboarding · home · import · game · reveal · stats · login · account ·
+`onboarding · home · import · game · offline · reveal · stats · login · account ·
 paywall · impressum · datenschutz · agb`.
 
-Globaler Zustand in `App`: `decks`, `history`, `game`, `result`, `theme`, `premium`.
+Globaler Zustand in `App`: `decks`, `history`, `game`, `offlineDeck`, `result`, `theme`, `premium`.
+`offlineDeck` ist nur während/nach einer Offline-Runde gesetzt; `Reveal` und „Nochmal“
+leiten daraus den Modus ab, `startGame` setzt es zurück.
+
+## Offline-Modus (`OfflineScreen.tsx`)
+
+Training mit echten Karten: Stoppuhr-Button an der Deck-Kachel → `ready` (Anleitung) →
+`running` (Stoppuhr, Screen Wake Lock, falls verfügbar) → `entry` (Treffer 0–6 per
+Radio-Gruppe) → `offlineRound()` → gleiche Persistenz wie digitale Runden → `Reveal`
+ohne Kartenliste. Gast-Regel wie digital: nur Demo-Decks.
 
 ## Spiel-Logik (`game.ts`)
 
@@ -58,6 +67,10 @@ Globaler Zustand in `App`: `decks`, `history`, `game`, `result`, `theme`, `premi
   Basis-Pokémon sein (3-stufig: persistiertes `b=1` → Cache-Ausschluss + Qty-Heuristik → Fallback).
 - **`deckToText(deck)`** — konvertiert Cards zurück ins Import-Format (für Deck-Bearbeitung).
 - **`score(state)`** — wertet Treffer (0–6) und Zeit aus.
+- **`offlineRound(deckId, start, end, hits)`** — baut eine Offline-Runde (`m: 'offline'`,
+  Zeit auf 0,1 s gerundet, mind. 0,1 s; `RangeError` bei Treffern außerhalb 0–6).
+- **`filterRounds(history, deckId, mode)`** — Stats-Filter nach Deck und Modus
+  (`all · digital · offline`); Runden ohne `m` gelten als digital.
 - **`starCard(deck)`** — Archetype-Erkennung: Mega ex > ex > Pokémon, nach Kopienanzahl.
   `Deck.archetype` als manueller Override.
 - **`SETMAP`** — Set-Kürzel → pokemontcg.io-Set-ID. Erweitern bei neuen Sets.
@@ -114,6 +127,9 @@ PokeAPI-Speziesnamen ab (behandelt "Mega X ex" → "x"). Sprite-Quellen:
 
 - **Gast-Modus:** `storage.ts` — Decks und Verlauf in `localStorage`.
 - **Angemeldet:** `sync.ts` — Decks und Runden nach Supabase gespiegelt.
+- **Runde** `{ d, t, h, ts, m? }` — `m` fehlt bei digitalen Runden (und allen Altdaten),
+  `'offline'` bei Offline-Runden. In Supabase: Spalte `rounds.m` (`null` = digital),
+  angelegt durch `supabase/004_add_round_mode.sql`.
 
 ## Server & Deployment
 

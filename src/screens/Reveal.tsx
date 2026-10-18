@@ -46,6 +46,7 @@ export function Reveal({ result, onPlayAgain, onHome, onStats }: Props) {
         </h1>
         <p style={{ margin: '0 0 16px', color: 'var(--sub)', fontSize: 12 }}>
           {result.deck.name}
+          {result.offline ? ` · ${t.modeOffline}` : ''}
         </p>
 
         <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>

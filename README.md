@@ -31,7 +31,8 @@ durchblättern, die 6 Preiskarten erraten.
 - **Deck-Import & -Bearbeitung** — Deckliste im Standard-TCG-Format einfügen, bearbeiten, umbenennen oder löschen.
 - **Kartenbilder** von pokemontcg.io mit limitlesstcg-Fallback — die App zeigt immer ein Bild.
 - **Deck-Kaskade** — überlappende Karten mit nativem Scroll, viele Kartennamen gleichzeitig lesbar, Tap-to-raise.
-- **Statistik** — Zeit, Genauigkeit und Verlauf pro Deck.
+- **Offline-Modus** — mit echten Karten trainieren: Die App stoppt nur die Zeit, die Treffer trägst du danach ein.
+- **Statistik** — Zeit, Genauigkeit und Verlauf pro Deck, filterbar nach digital/offline.
 - **Kostenloses Konto** (Supabase) — Decks und Fortschritt in der Cloud. Gäste können Demo-Decks testen.
 - **Dark/Light Mode**, PWA-fähig.
 

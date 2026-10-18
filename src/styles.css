@@ -201,3 +201,9 @@ a {
     scroll-behavior: auto !important;
   }
 }
+
+/* Offline-Modus: Fokusring für die (visuell versteckten) Treffer-Radios */
+.pc-hits input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
