@@ -37,6 +37,7 @@ export function CardFace({ img, fallbackImg, name, radius = 10, fontSize = 10 }:
           src={src}
           alt={name}
           loading="lazy"
+          draggable={false}
           onError={() => {
             if (useFallback) setFallbackFailed(true)
             else setFailed(true)

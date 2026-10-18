@@ -167,4 +167,37 @@ a {
   height: 100%;
   object-fit: cover;
   display: block;
+  /* Kein natives Bild-Ziehen (Maus) und kein Bildmenü bei Long-Press (iOS) */
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Deck-Kaskade im GameScreen. Fokusrahmen als Ring über der Karte — ein normaler
+   outline würde von der (absolut positionierten) Kartenfläche verdeckt. */
+.pc-cascade-card {
+  transition: transform 0.15s ease;
+}
+.pc-cascade-card:focus-visible {
+  outline: none;
+}
+.pc-cascade-card:focus-visible::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 3px var(--accent);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
