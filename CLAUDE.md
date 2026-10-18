@@ -21,6 +21,7 @@ Live: https://prized.konradthiemann.de
 ```
 src/
   game.ts          — Kernlogik: Typen, deal(), score(), parseImport()
+  gameFlow.ts      — Spielfluss-Helfer: Anheben/Typ-Lock, Auswahl, Kaskaden-Position
   App.tsx           — Screen-State-Machine, Routing
   i18n.tsx          — Übersetzungen (DE/EN), useT() Hook
   storage.ts        — localStorage-Persistenz
@@ -35,7 +36,7 @@ src/
     AuthProvider.tsx — Auth-Context
   screens/
     Home.tsx         — Deck-Übersicht
-    GameScreen.tsx   — Spielfeld (Kartenfächer + Deckliste)
+    GameScreen.tsx   — Spielfeld (Deck-Kaskade + Deckliste)
     Reveal.tsx       — Ergebnis-Anzeige
     ImportScreen.tsx  — Deck-Import (Textfeld)
     DeckBuilder.tsx   — Deck erstellen (Suche + Paste)
@@ -206,4 +207,4 @@ npm start          # Express Server (Port 8080)
 
 - Impressum-Adresse ist PLATZHALTER — vor echtem Go-Live ausfüllen
 - Premium/Payment (Stripe) noch nicht implementiert
-- Test-Coverage außerhalb von `game.ts`/`adminAggregate.js`/`adminApi.js`/Login-bfcache noch dünn — restliche Screens/Components ungetestet
+- Test-Coverage außerhalb von `game.ts`/`gameFlow.ts`/GameScreen/`adminAggregate.js`/`adminApi.js`/Login-bfcache noch dünn — restliche Screens/Components ungetestet

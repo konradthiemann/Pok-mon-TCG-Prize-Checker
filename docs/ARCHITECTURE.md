@@ -75,12 +75,31 @@ Globaler Zustand in `App`: `decks`, `history`, `game`, `result`, `theme`, `premi
 (`pc_basic_v1`). Der Resolution-Effect in `App.tsx` triggert auch wenn alle Bilder vorhanden
 sind aber Pokémon noch `b=undefined` haben — sonst würde Phase 2 nie laufen.
 
+## Deck-Kaskade (`GameScreen.tsx`)
+
+Das Restdeck liegt als **vertikale Kaskade** überlappender Karten: jede Karte zeigt nur
+ihren Kopfbalken (13 % der Kartenhöhe, min. 48 px — Stufe/Typ + Name), die nächste
+Karte überdeckt den Rest. Geblättert wird per **nativem Scroll** (Schwung, Mausrad,
+Trackpad kommen vom Browser; keine eigene Gesten-Logik). Jede Karte ist ein `<button>`
+mit `aria-pressed` (angehoben), Pfeiltasten wandern per Roving Tabindex.
+
+- Reine Logik (Anheben/Typ-Lock, Auswahl +1/−1 mit Obergrenze 6, sichtbarer Bereich)
+  liegt in `src/gameFlow.ts`; `deal()`/`score()` in `game.ts` bleiben unberührt.
+- Angehobene Karten und Scroll-Position leben in `GameScreen`, damit der Tab-Wechsel
+  (Tisch ⟷ Deckliste) sie nicht zurücksetzt.
+- Die Deckliste zeigt Hand & Aktiv mit; Tippen = +1 Kopie, „−" = −1, kein Durchzyklen.
+- Blockierte Aktionen (Typ-Lock, alle Kopien, 6/6) erklären sich über eine
+  `role="status"`-Hinweisblase statt still nichts zu tun.
+
 ## Raise-Guard (Anti-Cheat)
 
-Im Deck-Fächer können Karten angehoben werden um sie zu zählen. Zum Schutz vor
+In der Deck-Kaskade können Karten angehoben werden um sie zu zählen. Zum Schutz vor
 Deck-Durchleuchtung:
-- **Typ-Lock**: Erste angehobene Karte bestimmt den erlaubten Typ (P/T/E).
-- **Count-only**: Shelf zeigt nur die Anzahl, nicht das Verhältnis.
+- **Typ-Lock**: Erste angehobene Karte bestimmt den erlaubten Typ (P/T/E). Gesperrte
+  Karten sind abgedimmt, Antippen zeigt einen Hinweis.
+- **Kein „Alle absenken"**: bewusst — ein Knopf würde den Typ-Lock in Sekunden aushebeln.
+- **Count-only**: Shelf zeigt nur die Anzahl, nicht das Verhältnis; die Deckliste zeigt
+  keine Markierungs-Zähler.
 - **Visueller Hinweis**: Clock-Ring färbt sich von grün über blau zu warm-rot.
 
 ## Deck-Hintergrund (`DeckBackground.tsx`)
@@ -105,6 +124,6 @@ PokeAPI-Speziesnamen ab (behandelt "Mega X ex" → "x"). Sprite-Quellen:
 ## Konventionen
 
 - UI-Texte sind **deutsch**.
-- Karten **überlappen** im Design (Fächer) — nicht durch Grid ersetzen.
+- Karten **überlappen** im Design (Deck-Kaskade) — nicht durch Grid ersetzen.
 - SVG-Icons statt Emoji. Flat Colors statt Gradients. Minimale Shadows.
 - Border-radius: 8/10/12. Font-Größen: 12/14/16/20. Weights: 400/600/700.
