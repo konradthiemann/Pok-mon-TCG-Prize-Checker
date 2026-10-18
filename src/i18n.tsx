@@ -32,6 +32,14 @@ const de = {
   activeLabel: 'AKTIV',
   confirm: 'Bestätigen',
   raised: 'angehoben',
+  raiseHint: 'Tippe Karten an, um sie anzuheben',
+  raiseLocked: (type: string) => `Nur ${type} anhebbar – erst angehobene Karten absenken`,
+  raisedOnShelf: (name: string, n: number) => `${name}: ${n} angehoben`,
+  deckCardLabel: (name: string, i: number, n: number) => `${name}, ${i} von ${n}`,
+  pickLabel: (name: string, sel: number, q: number) => `${name} – ${sel} von ${q} gewählt`,
+  removeCopyLabel: (name: string) => `Eine Kopie abwählen: ${name}`,
+  allCopiesPicked: (q: number) => (q === 1 ? 'Einzige Kopie schon gewählt' : `Alle ${q} Kopien gewählt`),
+  prizesFull: '6 von 6 gewählt – erst eine abwählen',
   less: 'Weniger',
   more: 'Mehr',
 
@@ -133,7 +141,7 @@ const de = {
   onboarding: [
     { t: 'Was sind Preiskarten?', b: 'Zu Beginn jedes Spiels werden 6 deiner 60 Karten verdeckt als Preise beiseitegelegt. Zu wissen, welche das sind, ist ein echter kompetitiver Vorteil.' },
     { t: 'Ausschlussprinzip', b: 'Schau dir deine Hand an und blättere durch dein Deck. Jede Karte, die du siehst, ist NICHT in den Preisen — was übrig bleibt, muss dort liegen.' },
-    { t: 'Blättern & Auswählen', b: 'Wische durch den Kartenfächer und tippe Karten an, um sie anzuheben und zu zählen. Wähle dann in der Deckliste die 6 Karten, die du in den Preisen vermutest.' },
+    { t: 'Blättern & Auswählen', b: 'Scrolle durch dein Deck und tippe Karten an, um sie anzuheben und zu zählen. Wähle dann in der Deckliste die 6 Karten, die du in den Preisen vermutest.' },
     { t: 'Dein Deck, dein Tempo', b: 'Importiere deine eigene Deckliste und trainiere damit. Zeit und Genauigkeit werden festgehalten, damit du deinen Fortschritt verfolgen kannst.' },
   ] as { t: string; b: string }[],
 
@@ -185,6 +193,14 @@ const en: typeof de = {
   activeLabel: 'ACTIVE',
   confirm: 'Confirm',
   raised: 'raised',
+  raiseHint: 'Tap cards to raise them',
+  raiseLocked: (type: string) => `Only ${type} can be raised – lower the raised cards first`,
+  raisedOnShelf: (name: string, n: number) => `${name}: ${n} raised`,
+  deckCardLabel: (name: string, i: number, n: number) => `${name}, ${i} of ${n}`,
+  pickLabel: (name: string, sel: number, q: number) => `${name} – ${sel} of ${q} picked`,
+  removeCopyLabel: (name: string) => `Deselect one copy: ${name}`,
+  allCopiesPicked: (q: number) => (q === 1 ? 'Only copy already picked' : `All ${q} copies picked`),
+  prizesFull: '6 of 6 picked – deselect one first',
   less: 'Less',
   more: 'More',
 
@@ -277,7 +293,7 @@ const en: typeof de = {
   onboarding: [
     { t: 'What are prize cards?', b: 'At the start of every game, 6 of your 60 cards are set aside face-down as prizes. Knowing which ones they are is a real competitive edge.' },
     { t: 'Process of elimination', b: 'Look at your hand and flip through your deck. Every card you see is NOT in your prizes — whatever is left must be there.' },
-    { t: 'Browse & select', b: 'Swipe through the card fan and tap cards to raise and count them. Then pick the 6 cards in the deck list that you think are in the prizes.' },
+    { t: 'Browse & select', b: 'Scroll through your deck and tap cards to raise and count them. Then pick the 6 cards in the deck list that you think are in the prizes.' },
     { t: 'Your deck, your pace', b: 'Import your own deck list and practice with it. Time and accuracy are tracked so you can follow your progress.' },
   ],
 
