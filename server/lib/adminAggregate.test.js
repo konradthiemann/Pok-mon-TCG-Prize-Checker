@@ -50,7 +50,7 @@ describe('buildUsersList', () => {
       { user_id: 'u1', ts: NOW - 1 * DAY },
     ]
 
-    const list = buildUsersList(users, decks, rounds)
+    const list = buildUsersList(users, decks, rounds, NOW)
 
     expect(list.map((u) => u.id)).toEqual(['u2', 'u1', 'u3']) // neueste zuerst
     const u1 = list.find((u) => u.id === 'u1')
